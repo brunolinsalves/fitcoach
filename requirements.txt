@@ -1,0 +1,4 @@
+garminconnect>=0.2.37
+curl_cffi>=0.7.0
+python-dotenv>=1.0.1
+google-genai>=0.1.0

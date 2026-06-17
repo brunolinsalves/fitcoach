@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treino Dashboard | 16/06/2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg-base: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --bg-card-hover: rgba(30, 41, 59, 0.9);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --glow-spread: 15px;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.1), transparent 25%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        
+        .glass-panel:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Briefing Hero */
+        .hero-briefing {
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .hero-briefing h3 {
+            color: var(--accent-blue);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .hero-briefing ul {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero-briefing p {
+            margin-bottom: 1rem;
+        }
+        
+        .hero-briefing strong {
+            color: #fff;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .metric-card h3 {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .pace-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            margin-top: 0.2rem;
+        }
+
+        /* Dynamic Colors */
+        .color-green { color: var(--accent-green); text-shadow: 0 0 var(--glow-spread) rgba(16, 185, 129, 0.4); }
+        .color-yellow { color: var(--accent-yellow); text-shadow: 0 0 var(--glow-spread) rgba(245, 158, 11, 0.4); }
+        .color-red { color: var(--accent-red); text-shadow: 0 0 var(--glow-spread) rgba(239, 68, 68, 0.4); }
+        .color-blue { color: var(--accent-blue); text-shadow: 0 0 var(--glow-spread) rgba(59, 130, 246, 0.4); }
+
+        /* Activities Section */
+        .activities-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .activities-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-light);
+            color: var(--text-muted);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .filter-btn.active {
+            background: var(--accent-blue);
+            color: #fff;
+            border-color: var(--accent-blue);
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        th {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(255,255,255,0.03);
+        }
+        
+        .source-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .source-strava { background: rgba(252, 76, 2, 0.2); color: #fc4c02; border: 1px solid rgba(252, 76, 2, 0.4); }
+        .source-garmin { background: rgba(0, 124, 195, 0.2); color: #007cc3; border: 1px solid rgba(0, 124, 195, 0.4); }
+        
+        .no-data {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+        
+        @media (max-width: 768px) {
+            .metrics-grid { grid-template-columns: 1fr; }
+            .activities-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Treino Dashboard</h1>
+        <p class="metric-sub" id="current-date">16/06/2026</p>
+    </header>
+
+    <div class="glass-panel hero-briefing" id="briefing-content">
+        <!-- Briefing injected here -->
+        <p class="no-data">Carregando briefing...</p>
+    </div>
+
+    <div class="metrics-grid">
+        <div class="glass-panel metric-card">
+            <h3>Carga / ACWR</h3>
+            <div class="metric-value color-green" id="acwr-val">0.90</div>
+            <div class="metric-sub">
+                Aguda: 49.9 | Crônica: 55.7<br>
+                Semanal: 337.1
+            </div>
+        </div>
+        
+        <div class="glass-panel metric-card">
+            <h3>Performance (Combinada)</h3>
+            <div class="metric-value color-yellow" id="vo2-val">41.4</div>
+            <div class="metric-sub">
+                Idade Fitness: 44 anos<br>
+                Corrida: 44.4 | Ciclismo: 39.0
+            </div>
+        </div>
+        
+        <div class="glass-panel metric-card">
+            <h3>Recuperação (Sono)</h3>
+            <div class="metric-value color-red" id="sleep-val">05:53:00</div>
+            <div class="metric-sub">
+                FC Repouso: 50 bpm (Média 7d: 50)
+            </div>
+        </div>
+    </div>
+
+    
+        <div class="glass-panel" style="margin-bottom: 3rem;">
+            <div class="activities-header">
+                <h2>Previsões de Prova</h2>
+            </div>
+            <div class="metrics-grid" style="margin-bottom: 0;">
+                <div class="metric-card">
+                    <div class="metric-label"><h3>5K</h3></div>
+                    <div class="metric-value">24:19</div>
+                    <div class="pace-badge">🏃 Pace: 04:51/km</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label"><h3>10K</h3></div>
+                    <div class="metric-value">50:43</div>
+                    <div class="pace-badge">🏃 Pace: 05:04/km</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label"><h3>Meia Maratona</h3></div>
+                    <div class="metric-value">01:51:54</div>
+                    <div class="pace-badge">🏃 Pace: 05:18/km</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label"><h3>Maratona</h3></div>
+                    <div class="metric-value">03:53:20</div>
+                    <div class="pace-badge">🏃 Pace: 05:31/km</div>
+                </div>
+            </div>
+        </div>
+        
+
+    <div class="glass-panel">
+        <div class="activities-header">
+            <h2>Histórico de Atividades</h2>
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">Todos</button>
+                <button class="filter-btn" data-filter="7">Últimos 7 Dias</button>
+                <button class="filter-btn" data-filter="30">Últimos 30 Dias</button>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Esporte</th>
+                        <th>Nome</th>
+                        <th>Duração (min)</th>
+                        <th>FC Média</th>
+                        <th>TRIMP</th>
+                        <th>VO2 Estimado</th>
+                        <th>Origem</th>
+                    </tr>
+                </thead>
+                <tbody id="activities-body">
+                    <!-- JS will inject rows -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Injected Data
+    const rawBriefing = "### \ud83d\udd0b Briefing Di\u00e1rio - 16/06/2026\n\n**Recupera\u00e7\u00e3o:** \ud83d\udd34 O sono foi muito curto (5h 53min), indicando recupera\u00e7\u00e3o prec\u00e1ria apesar do RHR est\u00e1vel e baixo estresse.\n\n**Carga:** \ud83d\udfe2 A rela\u00e7\u00e3o de carga aguda/cr\u00f4nica (ACWR: 0.9) est\u00e1 na zona ideal, com volume semanal balanceado e um status de treino \"Produtivo\".\n\n**Performance:** \ud83d\udfe1 O VO2Max combinado (41.4) e o status \"Produtivo\" indicam performance est\u00e1vel, com bom potencial para otimiza\u00e7\u00e3o e melhoria da idade fitness (44).\n\n**A\u00e7\u00e3o do Dia:**\n\ud83c\udfaf **Treino Regenerativo**: Dada a recupera\u00e7\u00e3o prec\u00e1ria, priorize um treino muito leve de baixa intensidade (como uma rodagem muito f\u00e1cil ou pedal recuperativo) para promover a circula\u00e7\u00e3o e auxiliar na recupera\u00e7\u00e3o ativa.";
+    const activities = [{"date": "2026-06-15", "name": "Barra dos Coqueiros - S2 Seg Treino lo", "sport": "running", "duration_min": 48.0, "avg_hr": 158.0, "avg_watts": null, "trimp": 105.0, "method": "banister_hr", "estimated_vo2max": 41.51, "source": "garmin"}, {"date": "2026-06-15", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 25.0, "avg_hr": 69.0, "avg_watts": null, "trimp": 2.9, "method": "banister_hr", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-14", "name": "MyWhoosh - Endurance with Short Sprints", "sport": "VirtualRide", "duration_min": 62.0, "avg_hr": 101.5, "avg_watts": 108, "trimp": 30.0, "method": "banister_hr", "estimated_vo2max": null, "source": "strava"}, {"date": "2026-06-13", "name": "S1 S\u00e1b Corrida", "sport": "treadmill_running", "duration_min": 34.0, "avg_hr": 152.0, "avg_watts": null, "trimp": 64.8, "method": "banister_hr", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-12", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 6.0, "avg_hr": 78.0, "avg_watts": null, "trimp": 1.2, "method": "banister_hr", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-12", "name": "MyWhoosh - Over Under Efforts #2", "sport": "VirtualRide", "duration_min": 54.0, "avg_hr": 127.3, "avg_watts": 147, "trimp": 56.0, "method": "banister_hr", "estimated_vo2max": 41.4, "source": "strava"}, {"date": "2026-06-11", "name": "Barra dos Coqueiros - S1 Qui Treino de", "sport": "running", "duration_min": 33.0, "avg_hr": 143.0, "avg_watts": null, "trimp": 51.8, "method": "banister_hr", "estimated_vo2max": 50.14, "source": "garmin"}, {"date": "2026-06-11", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 9.0, "avg_hr": 87.0, "avg_watts": null, "trimp": 2.6, "method": "banister_hr", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-11", "name": "MyWhoosh - Endurance Ride", "sport": "VirtualRide", "duration_min": 30.0, "avg_hr": 116.1, "avg_watts": 117, "trimp": 22.8, "method": "banister_hr", "estimated_vo2max": 39.01, "source": "strava"}];
+    
+    // Parse Markdown for the briefing
+    document.getElementById('briefing-content').innerHTML = marked.parse(rawBriefing || "*Nenhum briefing encontrado.*", {breaks: true});
+    
+    // Header Date Formatting
+    const headerDateEl = document.getElementById('current-date');
+    if (headerDateEl && headerDateEl.innerText.includes('-')) {
+        const [y, m, d] = headerDateEl.innerText.split('-');
+        headerDateEl.innerText = `${d}/${m}/${y}`;
+    }
+
+    // Table Rendering
+    const tbody = document.getElementById('activities-body');
+    const sportMap = {
+        'ride': 'Ciclismo',
+        'virtualride': 'Ciclismo Virtual',
+        'cycling': 'Ciclismo',
+        'mountainbikeride': 'Mountain Bike',
+        'indoorcycling': 'Ciclismo Indoor',
+        'run': 'Corrida',
+        'running': 'Corrida',
+        'treadmill_running': 'Corrida na Esteira',
+        'street_running': 'Corrida de Rua',
+        'trailrun': 'Corrida em Trilha',
+        'swim': 'Natação',
+        'poolswim': 'Natação (Piscina)',
+        'openwaterswim': 'Natação (Águas Abertas)',
+        'weighttraining': 'Musculação',
+        'strength_training': 'Musculação',
+        'workout': 'Treino',
+        'yoga': 'Yoga',
+        'walk': 'Caminhada',
+        'hike': 'Trilha'
+    };
+    
+    function renderTable(daysFilter) {
+        tbody.innerHTML = '';
+        
+        if (!activities || activities.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data">Nenhuma atividade encontrada.</td></tr>';
+            return;
+        }
+        
+        const now = new Date();
+        const cutoff = new Date();
+        if (daysFilter !== 'all') {
+            cutoff.setDate(now.getDate() - parseInt(daysFilter));
+        }
+        
+        let count = 0;
+        activities.forEach(act => {
+            const actDate = new Date(act.date + 'T00:00:00'); 
+            if (daysFilter !== 'all' && actDate < cutoff) return;
+            
+            count++;
+            const tr = document.createElement('tr');
+            
+            const sourceClass = act.source === 'strava' ? 'source-strava' : 'source-garmin';
+            const sourceBadge = `<span class="source-badge ${sourceClass}">${act.source}</span>`;
+            
+            const vo2Cell = act.estimated_vo2max ? act.estimated_vo2max.toFixed(1) : '-';
+            const hrCell = act.avg_hr ? act.avg_hr : '-';
+            
+            // Format Date DD/MM/YYYY
+            const [y, m, d] = act.date.split('-');
+            const formattedDate = `${d}/${m}/${y}`;
+            
+            // Translate Sport
+            const sportKey = (act.sport || '').toLowerCase();
+            const translatedSport = sportMap[sportKey] || act.sport;
+            
+            tr.innerHTML = `
+                <td>${formattedDate}</td>
+                <td>${translatedSport}</td>
+                <td>${act.name || '-'}</td>
+                <td>${act.duration_min}</td>
+                <td>${hrCell}</td>
+                <td>${act.trimp ? act.trimp.toFixed(1) : '-'}</td>
+                <td>${vo2Cell}</td>
+                <td>${sourceBadge}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        if (count === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data">Nenhuma atividade neste período.</td></tr>';
+        }
+    }
+    
+    // Filter Event Listeners
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            renderTable(e.target.dataset.filter);
+        });
+    });
+    
+    // Initial Render
+    renderTable('all');
+</script>
+
+</body>
+</html>
