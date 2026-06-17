@@ -1,10 +1,10 @@
-### 🔋 Briefing Diário - 16/06/2026
+### 🔋 Briefing Diário - 17/06/2026
 
-**Recuperação:** 🔴 O sono foi muito curto (5h 53min), indicando recuperação precária apesar do RHR estável e baixo estresse.
+**Recuperação:** 🟡 Apesar de um bom tempo e estrutura de sono, a frequência cardíaca de repouso ligeiramente elevada sugere uma recuperação moderada.
 
-**Carga:** 🟢 A relação de carga aguda/crônica (ACWR: 0.9) está na zona ideal, com volume semanal balanceado e um status de treino "Produtivo".
+**Carga:** 🟡 Com um ACWR combinado de 1.32, a carga aguda está ligeiramente acima do ideal, indicando um status de treino 'UNPRODUCTIVE' que exige atenção.
 
-**Performance:** 🟡 O VO2Max combinado (41.4) e o status "Produtivo" indicam performance estável, com bom potencial para otimização e melhoria da idade fitness (44).
+**Performance:** 🟢 Seu VO2Max combinado de 41.4 foi atualizado hoje, e as previsões de prova mostram um bom nível de aptidão, com destaque para a corrida.
 
 **Ação do Dia:**
-🎯 **Treino Regenerativo**: Dada a recuperação precária, priorize um treino muito leve de baixa intensidade (como uma rodagem muito fácil ou pedal recuperativo) para promover a circulação e auxiliar na recuperação ativa.
+🎯 **Foco na Recuperação Ativa:** Após o intenso treino intervalado e natação de hoje, priorize a hidratação, nutrição de qualidade e um bom descanso para otimizar a assimilação da carga e virar o jogo do status "UNPRODUCTIVE" para ganhos reais!

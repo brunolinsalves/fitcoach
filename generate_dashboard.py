@@ -154,6 +154,88 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .color-yellow {{ color: var(--accent-yellow); text-shadow: 0 0 var(--glow-spread) rgba(245, 158, 11, 0.4); }}
         .color-red {{ color: var(--accent-red); text-shadow: 0 0 var(--glow-spread) rgba(239, 68, 68, 0.4); }}
         .color-blue {{ color: var(--accent-blue); text-shadow: 0 0 var(--glow-spread) rgba(59, 130, 246, 0.4); }}
+        .color-gray {{ color: var(--text-muted); text-shadow: 0 0 var(--glow-spread) rgba(148, 163, 184, 0.4); }}
+
+        /* Gauge styles */
+        .gauge-container {{
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }}
+        
+        .gauge-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.5rem;
+        }}
+
+        .gauge-value {{
+            font-size: 2.2rem;
+            font-weight: 700;
+        }}
+
+        .gauge-zone {{
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+        }}
+
+        /* Zone Colors */
+        .zone-gray {{
+            background: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }}
+        .zone-green {{
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }}
+        .zone-yellow {{
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }}
+        .zone-red {{
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }}
+
+        .gauge-bar-container {{
+            position: relative;
+            height: 10px;
+            background: linear-gradient(to right, 
+                #64748b 0%, #64748b 40%, 
+                #10b981 40%, #10b981 65%, 
+                #f59e0b 65%, #f59e0b 75%, 
+                #ef4444 75%, #ef4444 100%
+            );
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+        }}
+
+        .gauge-marker {{
+            position: absolute;
+            top: -5px;
+            width: 8px;
+            height: 20px;
+            background-color: #fff;
+            border-radius: 4px;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.5);
+            transition: left 0.3s ease;
+        }}
+
+        .gauge-labels {{
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }}
 
         /* Activities Section */
         .activities-header {{
@@ -265,7 +347,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="metrics-grid">
         <div class="glass-panel metric-card">
             <h3>Carga / ACWR</h3>
-            <div class="metric-value {acwr_color}" id="acwr-val">{acwr_val}</div>
+            {acwr_gauge_html}
             <div class="metric-sub">
                 Aguda: {acute_val} | Crônica: {chronic_val}<br>
                 Semanal: {weekly_val}
@@ -273,7 +355,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
         
         <div class="glass-panel metric-card">
-            <h3>Performance (Combinada)</h3>
+            <h3>VO2 Máx</h3>
             <div class="metric-value {vo2_color}" id="vo2-val">{vo2_val}</div>
             <div class="metric-sub">
                 Idade Fitness: {fitness_age} anos<br>
@@ -355,6 +437,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         'swim': 'Natação',
         'poolswim': 'Natação (Piscina)',
         'openwaterswim': 'Natação (Águas Abertas)',
+        'lap_swimming': 'Natação',
         'weighttraining': 'Musculação',
         'strength_training': 'Musculação',
         'workout': 'Treino',
@@ -439,8 +522,9 @@ def get_color_class(val: float, type_metric: str) -> str:
     if val is None:
         return ""
     if type_metric == "acwr":
+        if val < 0.8: return "color-gray"
         if 0.8 <= val <= 1.3: return "color-green"
-        if 1.3 < val <= 1.5 or 0.5 <= val < 0.8: return "color-yellow"
+        if 1.3 < val <= 1.5: return "color-yellow"
         return "color-red"
     if type_metric == "vo2":
         if val >= 50: return "color-green"
@@ -488,6 +572,58 @@ def main():
     # Formatting
     acwr_color = get_color_class(acwr_val, "acwr") if acwr_val else ""
     vo2_color = get_color_class(vo2_val, "vo2") if vo2_val else ""
+
+    # Build ACWR gauge HTML
+    if isinstance(acwr_val, (int, float)):
+        val_float = float(acwr_val)
+        if val_float < 0.8:
+            zone_name = "Subtreinamento"
+            zone_class = "zone-gray"
+            val_color_class = "color-gray"
+        elif 0.8 <= val_float <= 1.3:
+            zone_name = "Sweet Spot (Ideal)"
+            zone_class = "zone-green"
+            val_color_class = "color-green"
+        elif 1.3 < val_float <= 1.5:
+            zone_name = "Zona de Cautela"
+            zone_class = "zone-yellow"
+            val_color_class = "color-yellow"
+        else:
+            zone_name = "Zona de Perigo"
+            zone_class = "zone-red"
+            val_color_class = "color-red"
+        
+        clamped_val = min(max(val_float, 0.0), 2.0)
+        percentage = (clamped_val / 2.0) * 100
+        
+        acwr_gauge_html = f"""
+        <div class="gauge-container">
+            <div class="gauge-header">
+                <span class="gauge-value {val_color_class}">{val_float:.2f}</span>
+                <span class="gauge-zone {zone_class}">{zone_name}</span>
+            </div>
+            <div class="gauge-bar-container">
+                <div class="gauge-marker" style="left: {percentage}%;"></div>
+            </div>
+            <div class="gauge-labels" style="position: relative; height: 16px;">
+                <span style="position: absolute; left: 0%; transform: translateX(0%);">0.0</span>
+                <span style="position: absolute; left: 40%; transform: translateX(-50%); font-weight: 500;">0.8</span>
+                <span style="position: absolute; left: 65%; transform: translateX(-50%); font-weight: 500;">1.3</span>
+                <span style="position: absolute; left: 75%; transform: translateX(-50%); font-weight: 500;">1.5</span>
+                <span style="position: absolute; left: 100%; transform: translateX(-100%);">2.0+</span>
+            </div>
+        </div>
+        """
+    else:
+        acwr_gauge_html = """
+        <div class="gauge-container">
+            <div class="gauge-header">
+                <span class="gauge-value">n/a</span>
+                <span class="gauge-zone zone-gray">Sem dados</span>
+            </div>
+            <div class="gauge-bar-container" style="background: #334155;"></div>
+        </div>
+        """
     # Sleep color simple logic: >7h green, >6h yellow, else red
     sleep_color = "color-yellow"
     if sleep.get("durationSeconds"):
@@ -551,6 +687,7 @@ def main():
     html = HTML_TEMPLATE.format(
         date=header_date,
         acwr_val=f"{acwr_val:.2f}" if isinstance(acwr_val, float) else (acwr_val or "n/a"),
+        acwr_gauge_html=acwr_gauge_html,
         acute_val=acute_val,
         chronic_val=chronic_val,
         weekly_val=weekly_val,

@@ -23,9 +23,38 @@ load_dotenv()
 # Physiological parameters (from .env or defaults)
 # ---------------------------------------------------------------------------
 
+def parse_pace_to_seconds(pace_str: str) -> int:
+    """Parse MM:SS pace string to total seconds per 100m/km."""
+    try:
+        parts = pace_str.strip().split(":")
+        if len(parts) == 2:
+            return int(parts[0]) * 60 + int(parts[1])
+        return int(float(pace_str))
+    except Exception:
+        return 120  # default fallback 2:00
+
+def normalize_sport(sport: str) -> str:
+    if not sport:
+        return "unknown"
+    s = sport.lower().replace("_", "").replace(" ", "")
+    if any(x in s for x in ("run", "running", "treadmill")):
+        return "run"
+    if any(x in s for x in ("ride", "cycling", "bike")):
+        return "ride"
+    if "swim" in s:
+        return "swim"
+    if "walk" in s or "hike" in s:
+        return "walk"
+    if any(x in s for x in ("strength", "weight", "workout", "muscula", "forca", "força")):
+        return "strength"
+    return s
+
 MAX_HR = int(os.getenv("MAX_HR", "189"))
 RESTING_HR = int(os.getenv("RESTING_HR", "50"))
 CYCLING_FTP = int(os.getenv("CYCLING_FTP", "178"))
+RUNNING_LTHR = int(os.getenv("RUNNING_LTHR", "168"))
+SWIM_PACE = os.getenv("SWIM_PACE", "2:00")
+SWIM_PACE_SECS = parse_pace_to_seconds(SWIM_PACE)
 RUNNING_ECONOMY_PENALTY = float(os.getenv("RUNNING_ECONOMY_PENALTY", "0.10"))
 
 # EWMA decay constants
@@ -76,6 +105,45 @@ def calc_trimp_power(duration_min: float, avg_watts: float, ftp: float) -> float
     return round(tss, 1)
 
 
+def calc_swim_load_pace(duration_min: float, distance_meters: float, threshold_pace_sec: float) -> float:
+    """
+    Calculate Swim Training Stress Score (sTSS) based on swim pace.
+    
+    sTSS = (duration_min / 60.0) * (Intensity Factor)^2 * 100
+    Where Intensity Factor = threshold_pace_sec / average_pace_sec (seconds per 100m)
+    """
+    if not distance_meters or distance_meters <= 0 or not duration_min or duration_min <= 0 or threshold_pace_sec <= 0:
+        return 0.0
+    
+    # Average pace in seconds per 100m
+    avg_pace_sec = (duration_min * 60.0) / (distance_meters / 100.0)
+    if avg_pace_sec <= 0:
+        return 0.0
+        
+    intensity_factor = threshold_pace_sec / avg_pace_sec
+    tss = (duration_min / 60.0) * (intensity_factor ** 2) * 100
+    return round(tss, 1)
+
+
+def calc_run_load_hrss(duration_min: float, avg_hr: float, max_hr: float, resting_hr: float, threshold_hr: float) -> float:
+    """
+    Calculate Heart Rate Stress Score (HRSS) as normalized TRIMP.
+    
+    HRSS = (TRIMP_activity / TRIMP_1_hour_at_threshold) * 100
+    """
+    if duration_min <= 0 or avg_hr <= 0:
+        return 0.0
+        
+    trimp_act = calc_trimp_banister(duration_min, avg_hr, max_hr, resting_hr)
+    trimp_lthr_1hour = calc_trimp_banister(60.0, threshold_hr, max_hr, resting_hr)
+    
+    if trimp_lthr_1hour <= 0:
+        return 0.0
+        
+    hrss = (trimp_act / trimp_lthr_1hour) * 100
+    return round(hrss, 1)
+
+
 def calc_trimp_duration_only(duration_min: float, sport_type: str) -> float:
     """
     Fallback TRIMP estimate when no HR or power data is available.
@@ -91,28 +159,53 @@ def calc_trimp_duration_only(duration_min: float, sport_type: str) -> float:
     return round(duration_min * mult, 1)
 
 
-def compute_activity_trimp(activity: dict) -> float:
-    """Compute TRIMP for a single activity using the best available data."""
+def compute_activity_trimp(activity: dict) -> tuple[float, str]:
+    """Compute TRIMP/HRSS/TSS for a single activity using the best available data and return (trimp, method)."""
     duration_sec = activity.get("moving_time_seconds") or activity.get("elapsed_time_seconds") or 0
     duration_min = duration_sec / 60.0
     
     if duration_min <= 0:
-        return 0.0
+        return 0.0, "duration_only"
+    
+    sport_type = activity.get("sport_type") or activity.get("type") or "Unknown"
+    norm_sport = normalize_sport(sport_type)
+    
+    if norm_sport == "strength":
+        return 0.0, "ignored"
     
     avg_hr = activity.get("average_heartrate")
     avg_watts = activity.get("weighted_average_watts") or activity.get("average_watts")
-    sport_type = activity.get("sport_type") or activity.get("type") or "Unknown"
+    distance_meters = activity.get("distance_meters")
     
-    # Priority 1: HR-based TRIMP (most accurate)
-    if avg_hr and avg_hr > RESTING_HR:
-        return calc_trimp_banister(duration_min, avg_hr, MAX_HR, RESTING_HR)
-    
-    # Priority 2: Power-based TRIMP (cycling with power meter)
-    if avg_watts and avg_watts > 0 and sport_type in ("Ride", "VirtualRide", "MountainBikeRide", "Cycling"):
-        return calc_trimp_power(duration_min, avg_watts, CYCLING_FTP)
-    
-    # Priority 3: Duration-only fallback
-    return calc_trimp_duration_only(duration_min, sport_type)
+    # Rule 1: Swim -> Pace-based load (if distance is present)
+    if norm_sport == "swim":
+        if distance_meters and distance_meters > 0:
+            load = calc_swim_load_pace(duration_min, distance_meters, SWIM_PACE_SECS)
+            return load, "pace_swim_tss"
+        # Fallback if no distance
+        if avg_hr and avg_hr > RESTING_HR:
+            return calc_run_load_hrss(duration_min, avg_hr, MAX_HR, RESTING_HR, RUNNING_LTHR), "hrss"
+        return calc_trimp_duration_only(duration_min, sport_type), "duration_only"
+        
+    # Rule 2: Bike -> Power-based load (if power is present)
+    elif norm_sport == "ride":
+        if avg_watts and avg_watts > 0:
+            return calc_trimp_power(duration_min, avg_watts, CYCLING_FTP), "power_tss"
+        if avg_hr and avg_hr > RESTING_HR:
+            return calc_run_load_hrss(duration_min, avg_hr, MAX_HR, RESTING_HR, RUNNING_LTHR), "hrss"
+        return calc_trimp_duration_only(duration_min, sport_type), "duration_only"
+        
+    # Rule 3: Run -> HR-based load (if HR is present)
+    elif norm_sport == "run":
+        if avg_hr and avg_hr > RESTING_HR:
+            return calc_run_load_hrss(duration_min, avg_hr, MAX_HR, RESTING_HR, RUNNING_LTHR), "hrss"
+        return calc_trimp_duration_only(duration_min, sport_type), "duration_only"
+        
+    # Rule 4: Other sports -> HR if present, else duration
+    else:
+        if avg_hr and avg_hr > RESTING_HR:
+            return calc_run_load_hrss(duration_min, avg_hr, MAX_HR, RESTING_HR, RUNNING_LTHR), "hrss"
+        return calc_trimp_duration_only(duration_min, sport_type), "duration_only"
 
 
 # ---------------------------------------------------------------------------
@@ -250,18 +343,6 @@ def deduplicate_activities(garmin_acts: list[dict], strava_acts: list[dict]) -> 
     An activity is considered duplicate if start times are within DEDUP_TOLERANCE_SECS
     and the sport type is similar.
     """
-    # Sport type normalization mapping
-    sport_normalize = {
-        "running": "run", "run": "run", "trailrun": "run", "trail_run": "run", "treadmillrunning": "run", "streetrunning": "run",
-        "ride": "ride", "virtualride": "ride", "cycling": "ride", "mountainbikeride": "ride", "indoorcycling": "ride",
-        "swim": "swim", "openswaterswim": "swim", "poolswim": "swim",
-        "walk": "walk", "hike": "walk",
-        "strengthtraining": "strength", "weighttraining": "strength", "workout": "strength",
-    }
-
-    def normalize_sport(sport: str) -> str:
-        return sport_normalize.get((sport or "").lower().replace("_", ""), (sport or "unknown").lower())
-
     # Index Garmin activities by (normalized_sport, rounded_timestamp)
     garmin_index = set()
     for act in garmin_acts:
@@ -386,8 +467,8 @@ def load_garmin_activities(garmin_data_path: str, days: int = 42) -> list[dict]:
                     "distance_meters": act.get("distance"),
                     "average_heartrate": act.get("averageHR"),
                     "max_heartrate": act.get("maxHR"),
-                    "average_watts": None,
-                    "weighted_average_watts": None,
+                    "average_watts": act.get("averagePower") or act.get("avgPower") or act.get("averageWatts"),
+                    "weighted_average_watts": act.get("weightedAveragePower") or act.get("weightedAvgPower") or act.get("weightedAverageWatts"),
                     "source": "garmin",
                 })
             return simplified
@@ -446,12 +527,7 @@ def main():
     
     # Calculate TRIMP and VO2Max per activity
     for act in all_activities:
-        act["trimp"] = compute_activity_trimp(act)
-        act["trimp_method"] = (
-            "banister_hr" if act.get("average_heartrate") and act["average_heartrate"] > RESTING_HR
-            else "power_tss" if (act.get("weighted_average_watts") or act.get("average_watts"))
-            else "duration_only"
-        )
+        act["trimp"], act["trimp_method"] = compute_activity_trimp(act)
         act["estimated_vo2max"] = estimate_session_vo2max(act, MAX_HR, RESTING_HR, user_weight_kg)
     
     # Aggregate daily TRIMP
