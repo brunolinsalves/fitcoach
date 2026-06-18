@@ -1,0 +1,192 @@
+Defaulting to user installation because normal site-packages is not writeable
+Requirement already satisfied: garminconnect>=0.2.37 in /home/bruno/.local/lib/python3.12/site-packages (from -r requirements.txt (line 1)) (0.3.6)
+Requirement already satisfied: curl_cffi>=0.7.0 in /home/bruno/.local/lib/python3.12/site-packages (from -r requirements.txt (line 2)) (0.15.0)
+Requirement already satisfied: python-dotenv>=1.0.1 in /home/bruno/.local/lib/python3.12/site-packages (from -r requirements.txt (line 3)) (1.2.2)
+Requirement already satisfied: google-genai>=0.1.0 in /home/bruno/.local/lib/python3.12/site-packages (from -r requirements.txt (line 4)) (2.8.0)
+Requirement already satisfied: requests>=2.28 in /usr/lib/python3/dist-packages (from garminconnect>=0.2.37->-r requirements.txt (line 1)) (2.31.0)
+Requirement already satisfied: ua-generator>=1.0 in /home/bruno/.local/lib/python3.12/site-packages (from garminconnect>=0.2.37->-r requirements.txt (line 1)) (2.1.2)
+Requirement already satisfied: cffi>=2.0.0 in /home/bruno/.local/lib/python3.12/site-packages (from curl_cffi>=0.7.0->-r requirements.txt (line 2)) (2.0.0)
+Requirement already satisfied: certifi>=2024.2.2 in /home/bruno/.local/lib/python3.12/site-packages (from curl_cffi>=0.7.0->-r requirements.txt (line 2)) (2026.6.17)
+Requirement already satisfied: rich in /usr/lib/python3/dist-packages (from curl_cffi>=0.7.0->-r requirements.txt (line 2)) (13.7.1)
+Requirement already satisfied: anyio<5.0.0,>=4.8.0 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (4.14.0)
+Requirement already satisfied: google-auth<3.0.0,>=2.48.1 in /home/bruno/.local/lib/python3.12/site-packages (from google-auth[requests]<3.0.0,>=2.48.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (2.55.0)
+Requirement already satisfied: httpx<1.0.0,>=0.28.1 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (0.28.1)
+Requirement already satisfied: pydantic<3.0.0,>=2.9.0 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (2.13.4)
+Requirement already satisfied: tenacity<9.2.0,>=8.2.3 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (9.1.4)
+Requirement already satisfied: websockets<17.0,>=13.0.0 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (16.0)
+Requirement already satisfied: typing-extensions<5.0.0,>=4.14.0 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (4.15.0)
+Requirement already satisfied: distro<2,>=1.7.0 in /usr/lib/python3/dist-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (1.9.0)
+Requirement already satisfied: sniffio in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (1.3.1)
+Requirement already satisfied: idna>=2.8 in /usr/lib/python3/dist-packages (from anyio<5.0.0,>=4.8.0->google-genai>=0.1.0->-r requirements.txt (line 4)) (3.6)
+Requirement already satisfied: pycparser in /home/bruno/.local/lib/python3.12/site-packages (from cffi>=2.0.0->curl_cffi>=0.7.0->-r requirements.txt (line 2)) (3.0)
+Requirement already satisfied: pyasn1-modules>=0.2.1 in /home/bruno/.local/lib/python3.12/site-packages (from google-auth<3.0.0,>=2.48.1->google-auth[requests]<3.0.0,>=2.48.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (0.4.2)
+Requirement already satisfied: cryptography>=38.0.3 in /usr/lib/python3/dist-packages (from google-auth<3.0.0,>=2.48.1->google-auth[requests]<3.0.0,>=2.48.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (41.0.7)
+Requirement already satisfied: httpcore==1.* in /home/bruno/.local/lib/python3.12/site-packages (from httpx<1.0.0,>=0.28.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (1.0.9)
+Requirement already satisfied: h11>=0.16 in /home/bruno/.local/lib/python3.12/site-packages (from httpcore==1.*->httpx<1.0.0,>=0.28.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (0.16.0)
+Requirement already satisfied: annotated-types>=0.6.0 in /home/bruno/.local/lib/python3.12/site-packages (from pydantic<3.0.0,>=2.9.0->google-genai>=0.1.0->-r requirements.txt (line 4)) (0.7.0)
+Requirement already satisfied: pydantic-core==2.46.4 in /home/bruno/.local/lib/python3.12/site-packages (from pydantic<3.0.0,>=2.9.0->google-genai>=0.1.0->-r requirements.txt (line 4)) (2.46.4)
+Requirement already satisfied: typing-inspection>=0.4.2 in /home/bruno/.local/lib/python3.12/site-packages (from pydantic<3.0.0,>=2.9.0->google-genai>=0.1.0->-r requirements.txt (line 4)) (0.4.2)
+Requirement already satisfied: markdown-it-py>=2.2.0 in /usr/lib/python3/dist-packages (from rich->curl_cffi>=0.7.0->-r requirements.txt (line 2)) (3.0.0)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /usr/lib/python3/dist-packages (from rich->curl_cffi>=0.7.0->-r requirements.txt (line 2)) (2.17.2)
+Requirement already satisfied: mdurl~=0.1 in /usr/lib/python3/dist-packages (from markdown-it-py>=2.2.0->rich->curl_cffi>=0.7.0->-r requirements.txt (line 2)) (0.1.2)
+Requirement already satisfied: pyasn1<0.7.0,>=0.6.1 in /home/bruno/.local/lib/python3.12/site-packages (from pyasn1-modules>=0.2.1->google-auth<3.0.0,>=2.48.1->google-auth[requests]<3.0.0,>=2.48.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (0.6.3)
+Initializing Garmin API to fetch data for date: 2026-06-18
+Authenticated successfully using cached tokens for: e13e250d-98ca-4e96-bd38-bd4c3498b3f6
+Fetching sleep data...
+Fetching HRV data...
+Fetching training readiness...
+Fetching training status & workload...
+Fetching body composition (weight)...
+Fetching race predictions...
+Fetching daily activity summary...
+Fetching endurance score...
+Fetching fitness age...
+
+Success! Garmin daily data written to: /home/bruno/Documentos/projetos/pessoal/fitcoach/garmin_data.json
+Fetching Strava activities for the last 42 days...
+Using cached Strava token.
+  Found 65 activities:
+    Ride: 2
+    Run: 16
+    Swim: 4
+    VirtualRide: 21
+    WeightTraining: 20
+    Yoga: 2
+  Saved to /home/bruno/Documentos/projetos/pessoal/fitcoach/strava_activities.json
+Calculating training load for 2026-06-18...
+  Config: MAX_HR=189, RESTING_HR=50, FTP=178
+  Loaded weight for VO2Max calculation: 83.0 kg
+  Loaded 65 Strava activities from cache
+  Fetching Garmin activities...
+  Loaded 42 Garmin activities
+  Deduplication: 42 Garmin + 65 Strava → 23 Strava added, 42 duplicates removed → 65 total
+
+  Results:
+    Weekly Load (TRIMP): 397.7
+    Acute EWMA:  53.8
+    Chronic EWMA: 48.3
+    ACWR: 1.11
+    Estimated Combined VO2Max: 41.4 (Running: 44.53, Cycling: 39.01)
+    Estimated Combined Fitness Age: 44
+
+  Enriched /home/bruno/Documentos/projetos/pessoal/fitcoach/garmin_data.json with combined training load data.
+### 🔋 Briefing Diário - 18/06/2026
+
+**Recuperação:** 🟡 Dormiu bem em duração, mas com sono profundo reduzido e FC de repouso ligeiramente acima da média, sinalizando uma recuperação moderada.
+
+**Carga:** 🟡 A relação de carga aguda/crônica (ACWR: 1.11) está idealmente balanceada, mas o status de treino "UNPRODUCTIVE" indica a necessidade de ajustar o estímulo ou a recuperação.
+
+**Performance:** 🟡 Seu VO2Max combinado está em 41.4, um bom patamar, porém o treinamento "UNPRODUCTIVE" sugere estagnação e que é hora de buscar novos ganhos.
+
+**Ação do Dia:**
+🎯 **Recuperação Ativa / Mobilidade**: Foque em atividades leves como caminhada, yoga ou alongamentos para otimizar a recuperação e preparar o corpo para o próximo estímulo produtivo! Vamos virar esse jogo!
+  Dashboard gerado com sucesso em /home/bruno/Documentos/projetos/pessoal/fitcoach/dashboard.html
+
+>>> [Layer 1a] Collecting data from Garmin Connect...
+
+>>> [Layer 1b] Collecting activities from Strava...
+
+>>> [Layer 1c] Calculating combined training load (TRIMP + ACWR)...
+
+>>> [Layer 2] Generating daily briefing...
+>>> [Layer 3] Generating HTML Dashboard...
+>>> Enviando Dashboard por e-mail...
+    E-mail enviado com sucesso para brunolinsalves@gmail.com!
+
+Opening dashboard in your default browser...
+Defaulting to user installation because normal site-packages is not writeable
+Requirement already satisfied: garminconnect>=0.2.37 in /home/bruno/.local/lib/python3.12/site-packages (from -r requirements.txt (line 1)) (0.3.6)
+Requirement already satisfied: curl_cffi>=0.7.0 in /home/bruno/.local/lib/python3.12/site-packages (from -r requirements.txt (line 2)) (0.15.0)
+Requirement already satisfied: python-dotenv>=1.0.1 in /home/bruno/.local/lib/python3.12/site-packages (from -r requirements.txt (line 3)) (1.2.2)
+Requirement already satisfied: google-genai>=0.1.0 in /home/bruno/.local/lib/python3.12/site-packages (from -r requirements.txt (line 4)) (2.8.0)
+Requirement already satisfied: requests>=2.28 in /usr/lib/python3/dist-packages (from garminconnect>=0.2.37->-r requirements.txt (line 1)) (2.31.0)
+Requirement already satisfied: ua-generator>=1.0 in /home/bruno/.local/lib/python3.12/site-packages (from garminconnect>=0.2.37->-r requirements.txt (line 1)) (2.1.2)
+Requirement already satisfied: cffi>=2.0.0 in /home/bruno/.local/lib/python3.12/site-packages (from curl_cffi>=0.7.0->-r requirements.txt (line 2)) (2.0.0)
+Requirement already satisfied: certifi>=2024.2.2 in /home/bruno/.local/lib/python3.12/site-packages (from curl_cffi>=0.7.0->-r requirements.txt (line 2)) (2026.6.17)
+Requirement already satisfied: rich in /usr/lib/python3/dist-packages (from curl_cffi>=0.7.0->-r requirements.txt (line 2)) (13.7.1)
+Requirement already satisfied: anyio<5.0.0,>=4.8.0 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (4.14.0)
+Requirement already satisfied: google-auth<3.0.0,>=2.48.1 in /home/bruno/.local/lib/python3.12/site-packages (from google-auth[requests]<3.0.0,>=2.48.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (2.55.0)
+Requirement already satisfied: httpx<1.0.0,>=0.28.1 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (0.28.1)
+Requirement already satisfied: pydantic<3.0.0,>=2.9.0 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (2.13.4)
+Requirement already satisfied: tenacity<9.2.0,>=8.2.3 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (9.1.4)
+Requirement already satisfied: websockets<17.0,>=13.0.0 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (16.0)
+Requirement already satisfied: typing-extensions<5.0.0,>=4.14.0 in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (4.15.0)
+Requirement already satisfied: distro<2,>=1.7.0 in /usr/lib/python3/dist-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (1.9.0)
+Requirement already satisfied: sniffio in /home/bruno/.local/lib/python3.12/site-packages (from google-genai>=0.1.0->-r requirements.txt (line 4)) (1.3.1)
+Requirement already satisfied: idna>=2.8 in /usr/lib/python3/dist-packages (from anyio<5.0.0,>=4.8.0->google-genai>=0.1.0->-r requirements.txt (line 4)) (3.6)
+Requirement already satisfied: pycparser in /home/bruno/.local/lib/python3.12/site-packages (from cffi>=2.0.0->curl_cffi>=0.7.0->-r requirements.txt (line 2)) (3.0)
+Requirement already satisfied: pyasn1-modules>=0.2.1 in /home/bruno/.local/lib/python3.12/site-packages (from google-auth<3.0.0,>=2.48.1->google-auth[requests]<3.0.0,>=2.48.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (0.4.2)
+Requirement already satisfied: cryptography>=38.0.3 in /usr/lib/python3/dist-packages (from google-auth<3.0.0,>=2.48.1->google-auth[requests]<3.0.0,>=2.48.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (41.0.7)
+Requirement already satisfied: httpcore==1.* in /home/bruno/.local/lib/python3.12/site-packages (from httpx<1.0.0,>=0.28.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (1.0.9)
+Requirement already satisfied: h11>=0.16 in /home/bruno/.local/lib/python3.12/site-packages (from httpcore==1.*->httpx<1.0.0,>=0.28.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (0.16.0)
+Requirement already satisfied: annotated-types>=0.6.0 in /home/bruno/.local/lib/python3.12/site-packages (from pydantic<3.0.0,>=2.9.0->google-genai>=0.1.0->-r requirements.txt (line 4)) (0.7.0)
+Requirement already satisfied: pydantic-core==2.46.4 in /home/bruno/.local/lib/python3.12/site-packages (from pydantic<3.0.0,>=2.9.0->google-genai>=0.1.0->-r requirements.txt (line 4)) (2.46.4)
+Requirement already satisfied: typing-inspection>=0.4.2 in /home/bruno/.local/lib/python3.12/site-packages (from pydantic<3.0.0,>=2.9.0->google-genai>=0.1.0->-r requirements.txt (line 4)) (0.4.2)
+Requirement already satisfied: markdown-it-py>=2.2.0 in /usr/lib/python3/dist-packages (from rich->curl_cffi>=0.7.0->-r requirements.txt (line 2)) (3.0.0)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /usr/lib/python3/dist-packages (from rich->curl_cffi>=0.7.0->-r requirements.txt (line 2)) (2.17.2)
+Requirement already satisfied: mdurl~=0.1 in /usr/lib/python3/dist-packages (from markdown-it-py>=2.2.0->rich->curl_cffi>=0.7.0->-r requirements.txt (line 2)) (0.1.2)
+Requirement already satisfied: pyasn1<0.7.0,>=0.6.1 in /home/bruno/.local/lib/python3.12/site-packages (from pyasn1-modules>=0.2.1->google-auth<3.0.0,>=2.48.1->google-auth[requests]<3.0.0,>=2.48.1->google-genai>=0.1.0->-r requirements.txt (line 4)) (0.6.3)
+Initializing Garmin API to fetch data for date: 2026-06-18
+Authenticated successfully using cached tokens for: e13e250d-98ca-4e96-bd38-bd4c3498b3f6
+Fetching sleep data...
+Fetching HRV data...
+Fetching training readiness...
+Fetching training status & workload...
+Fetching body composition (weight)...
+Fetching race predictions...
+Fetching daily activity summary...
+Fetching endurance score...
+Fetching fitness age...
+
+Success! Garmin daily data written to: /home/bruno/Documentos/projetos/pessoal/fitcoach/garmin_data.json
+Fetching Strava activities for the last 42 days...
+Using cached Strava token.
+  Found 65 activities:
+    Ride: 2
+    Run: 16
+    Swim: 4
+    VirtualRide: 21
+    WeightTraining: 20
+    Yoga: 2
+  Saved to /home/bruno/Documentos/projetos/pessoal/fitcoach/strava_activities.json
+Calculating training load for 2026-06-18...
+  Config: MAX_HR=189, RESTING_HR=50, FTP=178
+  Loaded weight for VO2Max calculation: 83.0 kg
+  Loaded 65 Strava activities from cache
+  Fetching Garmin activities...
+  Loaded 42 Garmin activities
+  Deduplication: 42 Garmin + 65 Strava → 23 Strava added, 42 duplicates removed → 65 total
+
+  Results:
+    Weekly Load (TRIMP): 397.7
+    Acute EWMA:  53.8
+    Chronic EWMA: 48.3
+    ACWR: 1.11
+    Estimated Combined VO2Max: 41.4 (Running: 44.53, Cycling: 39.01)
+    Estimated Combined Fitness Age: 44
+
+  Enriched /home/bruno/Documentos/projetos/pessoal/fitcoach/garmin_data.json with combined training load data.
+### 🔋 Briefing Diário - 18/06/2026
+
+**Recuperação:** 🟡 A duração do sono foi satisfatória, mas o sono profundo esteve ligeiramente abaixo do ideal e a FC de repouso um pouco elevada, indicando necessidade de atenção à recuperação.
+
+**Carga:** 🟢 Com um ACWR de 1.11, sua carga de treino está perfeitamente na zona ideal, demonstrando um gerenciamento equilibrado e sustentável do volume de trabalho.
+
+**Performance:** 🟡 Seu VO2Max combinado de 41.4 é um bom ponto de partida, mas o status "UNPRODUCTIVE" e a idade fitness de 44 anos nos mostram que há um potencial significativo para impulsionar seu condicionamento.
+
+**Ação do Dia:**
+🎯 **Recuperação Ativa**: Realize uma rodagem muito leve ou pedal em Z1-Z2 de 30-40 minutos, focando na circulação e no relaxamento para otimizar sua recuperação e preparar o corpo para os próximos desafios!
+  Dashboard gerado com sucesso em /home/bruno/Documentos/projetos/pessoal/fitcoach/dashboard.html
+
+>>> [Layer 1a] Collecting data from Garmin Connect...
+
+>>> [Layer 1b] Collecting activities from Strava...
+
+>>> [Layer 1c] Calculating combined training load (TRIMP + ACWR)...
+
+>>> [Layer 2] Generating daily briefing...
+>>> [Layer 3] Generating HTML Dashboard...
+>>> Enviando Dashboard por e-mail...
+    E-mail enviado com sucesso para brunolinsalves@gmail.com!
+
+Opening dashboard in your default browser...

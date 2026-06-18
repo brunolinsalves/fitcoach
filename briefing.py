@@ -203,7 +203,7 @@ def main():
     html_path = os.path.abspath(os.path.join(project_dir, "dashboard.html"))
     if os.path.exists(html_path):
         print(f"\nOpening dashboard in your default browser...")
-        webbrowser.open('file://' + html_path)
+        #webbrowser.open('file://' + html_path)
 
 if __name__ == "__main__":
     main()
