@@ -8,6 +8,7 @@ the Garmin/Strava training data and the AI Briefing.
 
 import json
 import os
+import re
 from datetime import date
 
 HTML_TEMPLATE = """<!DOCTYPE html>
@@ -19,98 +20,43 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        :root {{
-            --bg-base: #0f172a;
-            --bg-card: rgba(30, 41, 59, 0.7);
-            --bg-card-hover: rgba(30, 41, 59, 0.9);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-green: #10b981;
-            --accent-yellow: #f59e0b;
-            --accent-red: #ef4444;
-            --accent-blue: #3b82f6;
-            --border-light: rgba(255, 255, 255, 0.1);
-            --glow-spread: 15px;
-        }}
-        
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         
         body {{
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-base);
-            color: var(--text-main);
+            background-color: #0f172a;
+            color: #f8fafc;
             min-height: 100vh;
             padding: 2rem;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.1), transparent 25%);
-            background-attachment: fixed;
         }}
 
         .container {{
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
         }}
 
-        /* Glassmorphism Cards */
         .glass-panel {{
-            background: var(--bg-card);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-light);
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: transform 0.2s ease, background 0.2s ease;
-        }}
-        
-        .glass-panel:hover {{
-            background: var(--bg-card-hover);
-            transform: translateY(-2px);
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }}
 
-        /* Briefing Hero */
         .hero-briefing {{
-            margin-bottom: 2rem;
             font-size: 1.1rem;
             line-height: 1.6;
         }}
-        
-        .hero-briefing h3 {{
-            color: var(--accent-blue);
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-        }}
-        
-        .hero-briefing ul {{
-            margin-left: 1.5rem;
-            margin-bottom: 1rem;
-        }}
 
-        .hero-briefing p {{
-            margin-bottom: 1rem;
-        }}
-        
-        .hero-briefing strong {{
-            color: #fff;
-        }}
-
-        /* Metrics Grid */
-        .metrics-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-        }}
-
+        /* Metrics */
         .metric-card h3 {{
             font-size: 0.9rem;
-            color: var(--text-muted);
+            color: #94a3b8;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }}
 
         .metric-value {{
@@ -121,32 +67,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         .metric-sub {{
             font-size: 0.85rem;
-            color: var(--text-muted);
-        }}
-
-        .pace-badge {{
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 0.2rem 0.6rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            color: #cbd5e1;
-            margin-top: 0.2rem;
+            color: #94a3b8;
         }}
 
         /* Dynamic Colors */
-        .color-green {{ color: var(--accent-green); text-shadow: 0 0 var(--glow-spread) rgba(16, 185, 129, 0.4); }}
-        .color-yellow {{ color: var(--accent-yellow); text-shadow: 0 0 var(--glow-spread) rgba(245, 158, 11, 0.4); }}
-        .color-red {{ color: var(--accent-red); text-shadow: 0 0 var(--glow-spread) rgba(239, 68, 68, 0.4); }}
-        .color-blue {{ color: var(--accent-blue); text-shadow: 0 0 var(--glow-spread) rgba(59, 130, 246, 0.4); }}
-        .color-gray {{ color: var(--text-muted); text-shadow: 0 0 var(--glow-spread) rgba(148, 163, 184, 0.4); }}
+        .color-green {{ color: #10b981; }}
+        .color-yellow {{ color: #f59e0b; }}
+        .color-red {{ color: #ef4444; }}
+        .color-gray {{ color: #94a3b8; }}
+        .color-blue {{ color: #3b82f6; }}
 
         /* Gauge styles */
         .gauge-container {{
             margin-top: 1rem;
-            margin-bottom: 1.5rem;
-            position: relative;
+            margin-bottom: 1rem;
         }}
         
         .gauge-header {{
@@ -168,7 +102,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             border-radius: 6px;
         }}
 
-        /* Zone Colors */
         .zone-gray {{
             background: rgba(148, 163, 184, 0.15);
             color: #94a3b8;
@@ -201,26 +134,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             );
             border-radius: 5px;
             margin-bottom: 0.5rem;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
         }}
 
         .gauge-marker {{
-            position: absolute;
-            top: -5px;
             width: 8px;
-            height: 20px;
-            background-color: #fff;
+            height: 18px;
+            background-color: #ffffff;
             border-radius: 4px;
-            transform: translateX(-50%);
-            box-shadow: 0 0 10px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.5);
-            transition: left 0.3s ease;
-        }}
-
-        .gauge-labels {{
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            color: var(--text-muted);
+            box-shadow: 0 0 5px rgba(255,255,255,0.8);
+            position: relative;
+            top: -4px;
         }}
 
         /* Activities Section */
@@ -228,7 +151,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }}
         
         .activities-header h2 {{
@@ -242,8 +165,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         .filter-btn {{
             background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border-light);
-            color: var(--text-muted);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
             padding: 0.4rem 1rem;
             border-radius: 20px;
             cursor: pointer;
@@ -258,9 +181,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }}
 
         .filter-btn.active {{
-            background: var(--accent-blue);
+            background: #3b82f6;
             color: #fff;
-            border-color: var(--accent-blue);
+            border-color: #3b82f6;
         }}
 
         /* Table */
@@ -276,12 +199,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         th, td {{
             padding: 1rem;
-            border-bottom: 1px solid var(--border-light);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }}
 
         th {{
             font-size: 0.85rem;
-            color: var(--text-muted);
+            color: #94a3b8;
             text-transform: uppercase;
             font-weight: 600;
         }}
@@ -302,57 +225,76 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             font-weight: bold;
             text-transform: uppercase;
         }}
-        .source-strava {{ background: rgba(252, 76, 2, 0.2); color: #fc4c02; border: 1px solid rgba(252, 76, 2, 0.4); }}
-        .source-garmin {{ background: rgba(0, 124, 195, 0.2); color: #007cc3; border: 1px solid rgba(0, 124, 195, 0.4); }}
         
         .no-data {{
             text-align: center;
             padding: 2rem;
-            color: var(--text-muted);
+            color: #94a3b8;
         }}
-        
-        @media (max-width: 768px) {{
-            .metrics-grid {{ grid-template-columns: 1fr; }}
-            .activities-header {{ flex-direction: column; align-items: flex-start; gap: 1rem; }}
+
+        /* Responsive styling for mobile/email clients */
+        @media (max-width: 600px) {{
+            body {{ padding: 1rem; }}
+            .responsive-table tr {{
+                display: block !important;
+                width: 100% !important;
+            }}
+            .responsive-table td {{
+                display: block !important;
+                width: 100% !important;
+                padding-right: 0 !important;
+                margin-bottom: 1rem !important;
+            }}
+            .activities-header {{
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }}
         }}
     </style>
 </head>
 <body>
 
 <div class="container">
-
     <div class="glass-panel hero-briefing" id="briefing-content">
-        <!-- Briefing injected here -->
-        <p class="no-data">Carregando briefing...</p>
+        {briefing_html}
     </div>
 
-    <div class="metrics-grid">
-        <div class="glass-panel metric-card">
-            <h3>Carga / ACWR</h3>
-            {acwr_gauge_html}
-            <div class="metric-sub">
-                Aguda: {acute_val} | Crônica: {chronic_val}<br>
-                Semanal: {weekly_val}
-            </div>
-        </div>
-        
-        <div class="glass-panel metric-card">
-            <h3>VO2 Máx</h3>
-            <div class="metric-value {vo2_color}" id="vo2-val">{vo2_val}</div>
-            <div class="metric-sub">
-                Idade Fitness: {fitness_age} anos<br>
-                Corrida: {run_vo2} | Ciclismo: {cyc_vo2}
-            </div>
-        </div>
-        
-        <div class="glass-panel metric-card">
-            <h3>Recuperação (Sono)</h3>
-            <div class="metric-value {sleep_color}" id="sleep-val">{sleep_duration}</div>
-            <div class="metric-sub">
-                FC Repouso: {rhr} bpm (Média 7d: {rhr7d})
-            </div>
-        </div>
-    </div>
+    <table class="responsive-table" cellpadding="0" cellspacing="0" style="width: 100%; border: none; margin-bottom: 1.5rem;">
+        <tr>
+            <td valign="top" style="width: 32%; padding-right: 2%; border: none;">
+                <div class="glass-panel" style="min-height: 200px; margin-bottom: 0;">
+                    <h3 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">Carga / ACWR</h3>
+                    {acwr_gauge_html}
+                    <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
+                        Aguda: {acute_val} | Crônica: {chronic_val}<br>
+                        Semanal: {weekly_val}
+                    </div>
+                </div>
+            </td>
+            
+            <td valign="top" style="width: 32%; padding-right: 2%; border: none;">
+                <div class="glass-panel" style="min-height: 200px; margin-bottom: 0;">
+                    <h3 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">VO2 Máx</h3>
+                    <div class="metric-value {vo2_color}">{vo2_val}</div>
+                    <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
+                        Idade Fitness: {fitness_age} anos<br>
+                        Corrida: {run_vo2} | Ciclismo: {cyc_vo2}
+                    </div>
+                </div>
+            </td>
+            
+            <td valign="top" style="width: 32%; border: none;">
+                <div class="glass-panel" style="min-height: 200px; margin-bottom: 0;">
+                    <h3 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">Recuperação (Sono)</h3>
+                    <div class="metric-value {sleep_color}">{sleep_duration}</div>
+                    <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
+                        FC Repouso: {rhr} bpm (Média 7d: {rhr7d})
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
 
     {race_predictions_html}
 
@@ -370,18 +312,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <table>
                 <thead>
                     <tr>
-                        <th>Data</th>
-                        <th>Esporte</th>
-                        <th>Nome</th>
-                        <th>Duração (min)</th>
-                        <th>FC Média</th>
-                        <th>TRIMP</th>
-                        <th>VO2 Estimado</th>
-                        <th>Origem</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Data</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Esporte</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Nome</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Duração (min)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">FC Média</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">TRIMP</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">VO2 Estimado</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Origem</th>
                     </tr>
                 </thead>
                 <tbody id="activities-body">
-                    <!-- JS will inject rows -->
+                    {activities_html}
                 </tbody>
             </table>
         </div>
@@ -389,16 +331,137 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </div>
 
 <script>
-    // Injected Data
+    // Injected Data (kept for backwards compatibility/browser features)
     const rawBriefing = {briefing_json};
     const activities = {activities_json};
     
-    // Parse Markdown for the briefing
-    document.getElementById('briefing-content').innerHTML = marked.parse(rawBriefing || "*Nenhum briefing encontrado.*", {{breaks: true}});
+    // Filter rows in browser
+    function filterTable(daysFilter) {{
+        const rows = document.querySelectorAll('.activity-row');
+        let count = 0;
+        
+        rows.forEach(row => {{
+            if (daysFilter === 'all') {{
+                row.style.display = '';
+                count++;
+            }} else {{
+                const daysAgo = parseInt(row.getAttribute('data-days-ago') || '999');
+                if (daysAgo <= parseInt(daysFilter)) {{
+                    row.style.display = '';
+                    count++;
+                }} else {{
+                    row.style.display = 'none';
+                }}
+            }}
+        }});
+        
+        // Handle empty states dynamically
+        let emptyStateRow = document.getElementById('empty-state-row');
+        if (count === 0) {{
+            if (!emptyStateRow) {{
+                emptyStateRow = document.createElement('tr');
+                emptyStateRow.id = 'empty-state-row';
+                emptyStateRow.innerHTML = '<td colspan="8" class="no-data" style="text-align: center; padding: 2rem; color: #94a3b8;">Nenhuma atividade neste período.</td>';
+                document.getElementById('activities-body').appendChild(emptyStateRow);
+            }} else {{
+                emptyStateRow.style.display = '';
+            }}
+        }} else if (emptyStateRow) {{
+            emptyStateRow.style.display = 'none';
+        }}
+    }}
+    
+    // Filter Event Listeners
+    document.querySelectorAll('.filter-btn').forEach(btn => {{
+        btn.addEventListener('click', (e) => {{
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            filterTable(e.target.dataset.filter);
+        }});
+    }});
+</script>
 
-    // Table Rendering
-    const tbody = document.getElementById('activities-body');
-    const sportMap = {{
+</body>
+</html>
+"""
+
+def markdown_to_html(md_text):
+    if not md_text:
+        return "<p style='color: #94a3b8;'>Nenhum briefing encontrado.</p>"
+        
+    html_lines = []
+    in_list = False
+    
+    lines = md_text.split('\n')
+    for line in lines:
+        line_stripped = line.strip()
+        if not line_stripped:
+            if in_list:
+                html_lines.append("</ul>")
+                in_list = False
+            continue
+            
+        # Headers
+        if line_stripped.startswith('### '):
+            if in_list:
+                html_lines.append("</ul>")
+                in_list = False
+            html_lines.append(f"<h3 style='color: #3b82f6; font-size: 1.25rem; font-weight: 600; margin-top: 16px; margin-bottom: 8px;'>{line_stripped[4:]}</h3>")
+            continue
+        elif line_stripped.startswith('## '):
+            if in_list:
+                html_lines.append("</ul>")
+                in_list = False
+            html_lines.append(f"<h2 style='color: #3b82f6; font-size: 1.5rem; font-weight: 600; margin-top: 20px; margin-bottom: 10px;'>{line_stripped[3:]}</h2>")
+            continue
+        elif line_stripped.startswith('# '):
+            if in_list:
+                html_lines.append("</ul>")
+                in_list = False
+            html_lines.append(f"<h1 style='color: #f8fafc; font-size: 1.75rem; font-weight: 700; margin-top: 24px; margin-bottom: 12px;'>{line_stripped[2:]}</h1>")
+            continue
+            
+        # Lists
+        is_list_item = False
+        list_content = ""
+        if line_stripped.startswith('- '):
+            is_list_item = True
+            list_content = line_stripped[2:]
+        elif line_stripped.startswith('* '):
+            is_list_item = True
+            list_content = line_stripped[2:]
+        elif line_stripped.startswith('🎯 '):
+            is_list_item = True
+            list_content = line_stripped
+        elif line_stripped.startswith('🏃 '):
+            is_list_item = True
+            list_content = line_stripped
+            
+        if is_list_item:
+            if not in_list:
+                html_lines.append("<ul style='margin-left: 20px; margin-top: 8px; margin-bottom: 16px; padding-left: 0;'>")
+                in_list = True
+            html_lines.append(f"<li style='margin-bottom: 8px; color: #cbd5e1;'>{list_content}</li>")
+            continue
+            
+        if in_list:
+            html_lines.append("</ul>")
+            in_list = False
+            
+        html_lines.append(f"<p style='margin-bottom: 12px; color: #cbd5e1;'>{line_stripped}</p>")
+        
+    if in_list:
+        html_lines.append("</ul>")
+        
+    html = "\n".join(html_lines)
+    html = re.sub(r'\*\*(.*?)\*\*', r'<strong style="color: #ffffff;">\1</strong>', html)
+    return html
+
+def generate_activities_html(activities):
+    if not activities:
+        return '<tr id="empty-state-row"><td colspan="8" class="no-data" style="text-align: center; padding: 2rem; color: #94a3b8;">Nenhuma atividade recente encontrada.</td></tr>'
+        
+    sport_map = {
         'ride': 'Ciclismo',
         'virtualride': 'Ciclismo Virtual',
         'cycling': 'Ciclismo',
@@ -419,78 +482,53 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         'yoga': 'Yoga',
         'walk': 'Caminhada',
         'hike': 'Trilha'
-    }};
+    }
     
-    function renderTable(daysFilter) {{
-        tbody.innerHTML = '';
+    rows = []
+    for act in activities:
+        date_str = act.get("date", "")
+        date_parts = date_str.split("-")
+        formatted_date = f"{date_parts[2]}/{date_parts[1]}/{date_parts[0]}" if len(date_parts) == 3 else date_str
         
-        if (!activities || activities.length === 0) {{
-            tbody.innerHTML = '<tr><td colspan="8" class="no-data">Nenhuma atividade encontrada.</td></tr>';
-            return;
-        }}
+        sport_key = act.get("sport", "").lower()
+        translated_sport = sport_map.get(sport_key, act.get("sport", "-"))
         
-        const now = new Date();
-        const cutoff = new Date();
-        if (daysFilter !== 'all') {{
-            cutoff.setDate(now.getDate() - parseInt(daysFilter));
-        }}
+        name = act.get("name", "-")
+        duration = act.get("duration_min", "-")
+        hr = act.get("avg_hr", "-")
+        if hr is None or hr == "":
+            hr = "-"
         
-        let count = 0;
-        activities.forEach(act => {{
-            const actDate = new Date(act.date + 'T00:00:00'); 
-            if (daysFilter !== 'all' && actDate < cutoff) return;
-            
-            count++;
-            const tr = document.createElement('tr');
-            
-            const sourceClass = act.source === 'strava' ? 'source-strava' : 'source-garmin';
-            const sourceBadge = `<span class="source-badge ${{sourceClass}}">${{act.source}}</span>`;
-            
-            const vo2Cell = act.estimated_vo2max ? act.estimated_vo2max.toFixed(1) : '-';
-            const hrCell = act.avg_hr ? act.avg_hr : '-';
-            
-            // Format Date DD/MM/YYYY
-            const [y, m, d] = act.date.split('-');
-            const formattedDate = `${{d}}/${{m}}/${{y}}`;
-            
-            // Translate Sport
-            const sportKey = (act.sport || '').toLowerCase();
-            const translatedSport = sportMap[sportKey] || act.sport;
-            
-            tr.innerHTML = `
-                <td>${{formattedDate}}</td>
-                <td>${{translatedSport}}</td>
-                <td>${{act.name || '-'}}</td>
-                <td>${{act.duration_min}}</td>
-                <td>${{hrCell}}</td>
-                <td>${{act.trimp ? act.trimp.toFixed(1) : '-'}}</td>
-                <td>${{vo2Cell}}</td>
-                <td>${{sourceBadge}}</td>
-            `;
-            tbody.appendChild(tr);
-        }});
+        trimp = act.get("trimp")
+        trimp_str = f"{trimp:.1f}" if isinstance(trimp, (int, float)) else "-"
         
-        if (count === 0) {{
-            tbody.innerHTML = '<tr><td colspan="8" class="no-data">Nenhuma atividade neste período.</td></tr>';
-        }}
-    }}
-    
-    // Filter Event Listeners
-    document.querySelectorAll('.filter-btn').forEach(btn => {{
-        btn.addEventListener('click', (e) => {{
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            renderTable(e.target.dataset.filter);
-        }});
-    }});
-    
-    // Initial Render
-    renderTable('all');
-</script>
-
-</body>
-</html>
-"""
+        vo2 = act.get("estimated_vo2max")
+        vo2_str = f"{vo2:.1f}" if isinstance(vo2, (int, float)) else "-"
+        
+        source = act.get("source", "")
+        source_style = "background: rgba(252, 76, 2, 0.15); color: #fc4c02; border: 1px solid rgba(252, 76, 2, 0.3);" if source == "strava" else "background: rgba(0, 124, 195, 0.15); color: #007cc3; border: 1px solid rgba(0, 124, 195, 0.3);"
+        source_badge = f'<span class="source-badge" style="{source_style}">{source}</span>'
+        
+        try:
+            act_date = date.fromisoformat(date_str)
+            days_ago = (date.today() - act_date).days
+        except Exception:
+            days_ago = 999
+            
+        rows.append(f"""
+        <tr class="activity-row" data-days-ago="{days_ago}">
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{formatted_date}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{translated_sport}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{name}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{duration}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{hr}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{trimp_str}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{vo2_str}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{source_badge}</td>
+        </tr>
+        """)
+        
+    return "\n".join(rows)
 
 def get_color_class(val: float, type_metric: str) -> str:
     """Return appropriate CSS color class based on the metric value."""
@@ -578,15 +616,17 @@ def main():
                 <span class="gauge-zone {zone_class}">{zone_name}</span>
             </div>
             <div class="gauge-bar-container">
-                <div class="gauge-marker" style="left: {percentage}%;"></div>
+                <div class="gauge-marker" style="margin-left: {percentage}%;"></div>
             </div>
-            <div class="gauge-labels" style="position: relative; height: 16px;">
-                <span style="position: absolute; left: 0%; transform: translateX(0%);">0.0</span>
-                <span style="position: absolute; left: 40%; transform: translateX(-50%); font-weight: 500;">0.8</span>
-                <span style="position: absolute; left: 65%; transform: translateX(-50%); font-weight: 500;">1.3</span>
-                <span style="position: absolute; left: 75%; transform: translateX(-50%); font-weight: 500;">1.5</span>
-                <span style="position: absolute; left: 100%; transform: translateX(-100%);">2.0+</span>
-            </div>
+            <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 11px; color: #94a3b8; margin-top: 4px; border: none;">
+                <tr>
+                    <td style="width: 40%; text-align: left; border: none; padding: 0;">0.0</td>
+                    <td style="width: 25%; text-align: left; border: none; padding: 0; font-weight: 500;">0.8</td>
+                    <td style="width: 10%; text-align: left; border: none; padding: 0; font-weight: 500;">1.3</td>
+                    <td style="width: 15%; text-align: left; border: none; padding: 0; font-weight: 500;">1.5</td>
+                    <td style="width: 10%; text-align: right; border: none; padding: 0;">2.0+</td>
+                </tr>
+            </table>
         </div>
         """
     else:
@@ -623,32 +663,42 @@ def main():
         pace_mara = race_preds.get("marathon", {}).get("pace_formatted", "-")
         
         race_preds_html = f"""
-        <div class="glass-panel" style="margin-bottom: 3rem;">
-            <div class="activities-header">
-                <h2>Previsões de Prova</h2>
+        <div class="glass-panel" style="background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+            <div style="margin-bottom: 16px;">
+                <h2 style="font-size: 1.5rem; font-weight: 600;">Previsões de Prova</h2>
             </div>
-            <div class="metrics-grid" style="margin-bottom: 0;">
-                <div class="metric-card">
-                    <div class="metric-label"><h3>5K</h3></div>
-                    <div class="metric-value">{pred_5k}</div>
-                    <div class="pace-badge">🏃 Pace: {pace_5k}/km</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label"><h3>10K</h3></div>
-                    <div class="metric-value">{pred_10k}</div>
-                    <div class="pace-badge">🏃 Pace: {pace_10k}/km</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label"><h3>Meia Maratona</h3></div>
-                    <div class="metric-value">{pred_half}</div>
-                    <div class="pace-badge">🏃 Pace: {pace_half}/km</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label"><h3>Maratona</h3></div>
-                    <div class="metric-value">{pred_mara}</div>
-                    <div class="pace-badge">🏃 Pace: {pace_mara}/km</div>
-                </div>
-            </div>
+            <table class="responsive-table" cellpadding="0" cellspacing="0" style="width: 100%; border: none;">
+                <tr>
+                    <td valign="top" style="width: 23%; padding-right: 2%; border: none;">
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                            <h3 style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase;">5K</h3>
+                            <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_5k}</div>
+                            <div class="pace-badge" style="display: inline-block; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; color: #cbd5e1;">🏃 Pace: {pace_5k}/km</div>
+                        </div>
+                    </td>
+                    <td valign="top" style="width: 23%; padding-right: 2%; border: none;">
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                            <h3 style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase;">10K</h3>
+                            <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_10k}</div>
+                            <div class="pace-badge" style="display: inline-block; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; color: #cbd5e1;">🏃 Pace: {pace_10k}/km</div>
+                        </div>
+                    </td>
+                    <td valign="top" style="width: 23%; padding-right: 2%; border: none;">
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                            <h3 style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase;">Meia Maratona</h3>
+                            <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_half}</div>
+                            <div class="pace-badge" style="display: inline-block; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; color: #cbd5e1;">🏃 Pace: {pace_half}/km</div>
+                        </div>
+                    </td>
+                    <td valign="top" style="width: 23%; border: none;">
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                            <h3 style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase;">Maratona</h3>
+                            <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_mara}</div>
+                            <div class="pace-badge" style="display: inline-block; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; color: #cbd5e1;">🏃 Pace: {pace_mara}/km</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </div>
         """
 
@@ -657,6 +707,9 @@ def main():
     if "-" in raw_date:
         y, m, d = raw_date.split("-")
         header_date = f"{d}/{m}/{y}"
+
+    briefing_html = markdown_to_html(briefing_text)
+    activities_html = generate_activities_html(activities)
 
     # Inject into HTML
     html = HTML_TEMPLATE.format(
@@ -676,6 +729,8 @@ def main():
         sleep_color=sleep_color,
         rhr=rhr,
         rhr7d=rhr7d,
+        briefing_html=briefing_html,
+        activities_html=activities_html,
         briefing_json=json.dumps(briefing_text),
         activities_json=json.dumps(activities),
         race_predictions_html=race_preds_html
