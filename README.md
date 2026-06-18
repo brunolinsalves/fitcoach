@@ -96,6 +96,16 @@ Essenciais para o cálculo correto do TRIMP e zonas de intensidade:
 - `SWIM_PACE`: Ritmo médio para 100m de natação (formato `M:SS`, ex: `2:00`).
 - `RUNNING_ECONOMY_PENALTY`: Fator de penalidade para corrida (ex: `0.10`).
 
+### 5. Envio por E-mail (Opcional)
+Se desejar enviar o dashboard HTML por e-mail automaticamente a cada execução:
+- `SEND_EMAIL`: Define se envia o e-mail (`true` ou `false`).
+- `SMTP_SERVER`: Servidor SMTP de saída (ex: `smtp.gmail.com`).
+- `SMTP_PORT`: Porta SMTP (geralmente `587` ou `465`).
+- `SMTP_USERNAME`: Usuário do e-mail de envio (ex: `seu-email@gmail.com`).
+- `SMTP_PASSWORD`: Senha de aplicativo (App Password) gerada na sua conta de e-mail.
+- `EMAIL_TO`: E-mail de destino (ex: `seu-email@gmail.com`).
+- `EMAIL_FROM`: E-mail de origem (ex: `seu-email@gmail.com`).
+
 ---
 
 ## 🚀 Como Executar

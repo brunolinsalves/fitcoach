@@ -56,6 +56,85 @@ def run_step(label: str, cmd: list[str], cwd: Path) -> bool:
         return False
     return True
 
+def send_email_if_enabled(project_dir: Path, date_arg: str | None, output_path: str):
+    send_email = os.getenv("SEND_EMAIL", "false").lower() in ("true", "1", "yes")
+    if not send_email:
+        return
+
+    print(">>> Enviando Dashboard por e-mail...")
+    html_path = project_dir / "dashboard.html"
+    if not html_path.exists():
+        print("    Erro: dashboard.html não encontrado. Não foi possível enviar o e-mail.", file=sys.stderr)
+        return
+
+    try:
+        with open(html_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+    except Exception as e:
+        print(f"    Erro ao ler dashboard.html: {e}", file=sys.stderr)
+        return
+
+    # Determine date for the subject
+    date_str = date_arg
+    if not date_str:
+        if os.path.exists(output_path):
+            try:
+                import json
+                with open(output_path, "r", encoding="utf-8") as f_json:
+                    data = json.load(f_json)
+                    date_str = data.get("metadata", {}).get("date")
+            except Exception:
+                pass
+
+    if not date_str:
+        from datetime import date
+        date_str = date.today().isoformat()
+
+    if "-" in date_str:
+        y, m, d = date_str.split("-")
+        date_str = f"{d}/{m}/{y}"
+
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    try:
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    except ValueError:
+        smtp_port = 587
+        
+    smtp_username = os.getenv("SMTP_USERNAME")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    email_to = os.getenv("EMAIL_TO", "brunolinsalves@gmail.com")
+    email_from = os.getenv("EMAIL_FROM", "brunolinsalves@gmail.com")
+
+    if not smtp_username or not smtp_password:
+        print("    Aviso: SMTP_USERNAME ou SMTP_PASSWORD não configurados no arquivo .env. Envio de e-mail cancelado.", file=sys.stderr)
+        return
+
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = f"FitCoach: Treino Dashboard | {date_str}"
+    msg['From'] = email_from
+    msg['To'] = email_to
+
+    part = MIMEText(html_content, 'html', 'utf-8')
+    msg.attach(part)
+
+    try:
+        if smtp_port == 465:
+            server = smtplib.SMTP_SSL(smtp_server, smtp_port)
+        else:
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+
+        server.login(smtp_username, smtp_password)
+        server.sendmail(email_from, email_to, msg.as_string())
+        server.quit()
+        print(f"    E-mail enviado com sucesso para {email_to}!")
+    except Exception as e:
+        print(f"    Erro ao enviar e-mail: {e}", file=sys.stderr)
+
 def main():
     args = parse_arguments()
     project_dir = Path(__file__).parent.resolve()
@@ -116,6 +195,9 @@ def main():
     # Step 5: Generate Dashboard
     dashboard_cmd = [python_exe, str(project_dir / "generate_dashboard.py")]
     run_step("[Layer 3] Generating HTML Dashboard...", dashboard_cmd, project_dir)
+    
+    # Send email if configured
+    send_email_if_enabled(project_dir, args.date, output_path)
     
     # Open browser
     html_path = os.path.abspath(os.path.join(project_dir, "dashboard.html"))
