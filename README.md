@@ -99,10 +99,12 @@ Essenciais para o cálculo correto do TRIMP e zonas de intensidade:
 ### 5. Envio por E-mail (Opcional)
 Se desejar enviar o dashboard HTML por e-mail automaticamente a cada execução:
 - `SEND_EMAIL`: Define se envia o e-mail (`true` ou `false`).
-- `SMTP_SERVER`: Servidor SMTP de saída (ex: `smtp.gmail.com`).
-- `SMTP_PORT`: Porta SMTP (geralmente `587` ou `465`).
+- `SMTP_SERVER`: Servidor SMTP de saída (pré-configurado para Gmail: `smtp.gmail.com`).
+- `SMTP_PORT`: Porta SMTP (geralmente `587` com TLS ou `465` com SSL. Gmail usa `587`).
 - `SMTP_USERNAME`: Usuário do e-mail de envio (ex: `seu-email@gmail.com`).
-- `SMTP_PASSWORD`: Senha de aplicativo (App Password) gerada na sua conta de e-mail.
+- `SMTP_PASSWORD`: Senha de autenticação.
+  > [!IMPORTANT]
+  > Se você utiliza o **Gmail**, não utilize sua senha padrão. Por questões de segurança e políticas do Google, você deve gerar uma **Senha de App** no link [Google App Passwords](https://myaccount.google.com/apppasswords) e preenchê-la aqui.
 - `EMAIL_TO`: E-mail de destino (ex: `seu-email@gmail.com`).
 - `EMAIL_FROM`: E-mail de origem (ex: `seu-email@gmail.com`).
 
