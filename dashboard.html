@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treino Dashboard | 17/06/2026</title>
+    <title>Treino Dashboard | 18/06/2026</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -40,20 +40,6 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
-        }
-
-        header {
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        
-        header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
         }
 
         /* Glassmorphism Cards */
@@ -322,10 +308,6 @@
 <body>
 
 <div class="container">
-    <header>
-        <h1>Treino Dashboard</h1>
-        <p class="metric-sub" id="current-date">17/06/2026</p>
-    </header>
 
     <div class="glass-panel hero-briefing" id="briefing-content">
         <!-- Briefing injected here -->
@@ -338,11 +320,11 @@
             
         <div class="gauge-container">
             <div class="gauge-header">
-                <span class="gauge-value color-yellow">1.38</span>
-                <span class="gauge-zone zone-yellow">Zona de Cautela</span>
+                <span class="gauge-value color-green">1.11</span>
+                <span class="gauge-zone zone-green">Sweet Spot (Ideal)</span>
             </div>
             <div class="gauge-bar-container">
-                <div class="gauge-marker" style="left: 69.0%;"></div>
+                <div class="gauge-marker" style="left: 55.50000000000001%;"></div>
             </div>
             <div class="gauge-labels" style="position: relative; height: 16px;">
                 <span style="position: absolute; left: 0%; transform: translateX(0%);">0.0</span>
@@ -354,8 +336,8 @@
         </div>
         
             <div class="metric-sub">
-                Aguda: 71.7 | Crônica: 52.1<br>
-                Semanal: 450.5
+                Aguda: 53.8 | Crônica: 48.3<br>
+                Semanal: 397.7
             </div>
         </div>
         
@@ -364,13 +346,13 @@
             <div class="metric-value color-yellow" id="vo2-val">41.4</div>
             <div class="metric-sub">
                 Idade Fitness: 44 anos<br>
-                Corrida: 44.5 | Ciclismo: 39.4
+                Corrida: 44.5 | Ciclismo: 39.0
             </div>
         </div>
         
         <div class="glass-panel metric-card">
             <h3>Recuperação (Sono)</h3>
-            <div class="metric-value color-green" id="sleep-val">07:13:00</div>
+            <div class="metric-value color-green" id="sleep-val">07:12:00</div>
             <div class="metric-sub">
                 FC Repouso: 52 bpm (Média 7d: 50)
             </div>
@@ -400,7 +382,7 @@
                 </div>
                 <div class="metric-card">
                     <div class="metric-label"><h3>Maratona</h3></div>
-                    <div class="metric-value">03:53:20</div>
+                    <div class="metric-value">03:53:18</div>
                     <div class="pace-badge">🏃 Pace: 05:31/km</div>
                 </div>
             </div>
@@ -441,18 +423,11 @@
 
 <script>
     // Injected Data
-    const rawBriefing = "### \ud83d\udd0b Briefing Di\u00e1rio - 17/06/2026\n\n**Recupera\u00e7\u00e3o:** \ud83d\udfe1 Apesar de um bom tempo e estrutura de sono, a frequ\u00eancia card\u00edaca de repouso ligeiramente elevada sugere uma recupera\u00e7\u00e3o moderada.\n\n**Carga:** \ud83d\udfe1 Com um ACWR combinado de 1.32, a carga aguda est\u00e1 ligeiramente acima do ideal, indicando um status de treino 'UNPRODUCTIVE' que exige aten\u00e7\u00e3o.\n\n**Performance:** \ud83d\udfe2 Seu VO2Max combinado de 41.4 foi atualizado hoje, e as previs\u00f5es de prova mostram um bom n\u00edvel de aptid\u00e3o, com destaque para a corrida.\n\n**A\u00e7\u00e3o do Dia:**\n\ud83c\udfaf **Foco na Recupera\u00e7\u00e3o Ativa:** Ap\u00f3s o intenso treino intervalado e nata\u00e7\u00e3o de hoje, priorize a hidrata\u00e7\u00e3o, nutri\u00e7\u00e3o de qualidade e um bom descanso para otimizar a assimila\u00e7\u00e3o da carga e virar o jogo do status \"UNPRODUCTIVE\" para ganhos reais!";
-    const activities = [{"date": "2026-06-17", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 6.0, "avg_hr": 77.0, "avg_watts": null, "trimp": 0.0, "method": "ignored", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-17", "name": "Nata\u00e7\u00e3o em piscina", "sport": "lap_swimming", "duration_min": 41.0, "avg_hr": null, "avg_watts": null, "trimp": 65.4, "method": "pace_swim_tss", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-17", "name": "Barra dos Coqueiros - S2 Qua Intervalo", "sport": "running", "duration_min": 45.0, "avg_hr": 150.0, "avg_watts": null, "trimp": 49.8, "method": "hrss", "estimated_vo2max": 44.53, "source": "garmin"}, {"date": "2026-06-16", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 8.0, "avg_hr": 69.0, "avg_watts": null, "trimp": 0.0, "method": "ignored", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-16", "name": "MyWhoosh - Capacity Pyramid #1", "sport": "VirtualRide", "duration_min": 70.0, "avg_hr": 131.2, "avg_watts": 148, "trimp": 80.9, "method": "power_tss", "estimated_vo2max": 39.97, "source": "strava"}, {"date": "2026-06-15", "name": "Barra dos Coqueiros - S2 Seg Treino lo", "sport": "running", "duration_min": 48.0, "avg_hr": 158.0, "avg_watts": null, "trimp": 63.1, "method": "hrss", "estimated_vo2max": 41.51, "source": "garmin"}, {"date": "2026-06-15", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 25.0, "avg_hr": 69.0, "avg_watts": null, "trimp": 0.0, "method": "ignored", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-14", "name": "MyWhoosh - Endurance with Short Sprints", "sport": "VirtualRide", "duration_min": 62.0, "avg_hr": 101.5, "avg_watts": 108, "trimp": 38.1, "method": "power_tss", "estimated_vo2max": null, "source": "strava"}, {"date": "2026-06-13", "name": "S1 S\u00e1b Corrida", "sport": "treadmill_running", "duration_min": 34.0, "avg_hr": 152.0, "avg_watts": null, "trimp": 38.9, "method": "hrss", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-12", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 6.0, "avg_hr": 78.0, "avg_watts": null, "trimp": 0.0, "method": "ignored", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-12", "name": "MyWhoosh - Over Under Efforts #2", "sport": "VirtualRide", "duration_min": 54.0, "avg_hr": 127.3, "avg_watts": 147, "trimp": 61.5, "method": "power_tss", "estimated_vo2max": 41.4, "source": "strava"}, {"date": "2026-06-11", "name": "Barra dos Coqueiros - S1 Qui Treino de", "sport": "running", "duration_min": 33.0, "avg_hr": 143.0, "avg_watts": null, "trimp": 31.1, "method": "hrss", "estimated_vo2max": 50.14, "source": "garmin"}, {"date": "2026-06-11", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 9.0, "avg_hr": 87.0, "avg_watts": null, "trimp": 0.0, "method": "ignored", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-11", "name": "MyWhoosh - Endurance Ride", "sport": "VirtualRide", "duration_min": 30.0, "avg_hr": 116.1, "avg_watts": 117, "trimp": 21.7, "method": "power_tss", "estimated_vo2max": 39.01, "source": "strava"}];
+    const rawBriefing = "### \ud83d\udd0b Briefing Di\u00e1rio - 18/06/2026\n\n**Recupera\u00e7\u00e3o:** \ud83d\udfe1 Sua recupera\u00e7\u00e3o \u00e9 moderada; foque em otimizar o sono profundo para uma adapta\u00e7\u00e3o mais eficaz, especialmente ap\u00f3s a semana de treinos.\n\n**Carga:** \ud83d\udfe2 Sua Carga Aguda:Cr\u00f4nica (ACWR: 1.11) est\u00e1 perfeitamente na zona ideal, e sua carga semanal combinada (397.7 TRIMP) est\u00e1 bem balanceada dentro da faixa recomendada.\n\n**Performance:** \ud83d\udfe1 Embora seu VO2Max combinado seja 41.4, o status 'Improdutivo' aponta para uma estagna\u00e7\u00e3o que precisamos superar com foco e estrat\u00e9gia.\n\n**A\u00e7\u00e3o do Dia:**\n\ud83c\udfaf **Descanso Total / Recovery Passivo**: Permita que seu corpo se recupere completamente hoje. Um dia de descanso estrat\u00e9gico \u00e9 crucial para reverter o status \"Improdutivo\" e absorver a carga de treino da semana. Vamos usar isso como um trampolim para a evolu\u00e7\u00e3o!";
+    const activities = [{"date": "2026-06-17", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 6.0, "avg_hr": 77.0, "avg_watts": null, "trimp": 0.0, "method": "ignored", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-17", "name": "Nata\u00e7\u00e3o em piscina", "sport": "lap_swimming", "duration_min": 41.0, "avg_hr": null, "avg_watts": null, "trimp": 65.4, "method": "pace_swim_tss", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-17", "name": "Barra dos Coqueiros - S2 Qua Intervalo", "sport": "running", "duration_min": 45.0, "avg_hr": 150.0, "avg_watts": null, "trimp": 49.8, "method": "hrss", "estimated_vo2max": 44.53, "source": "garmin"}, {"date": "2026-06-16", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 8.0, "avg_hr": 69.0, "avg_watts": null, "trimp": 0.0, "method": "ignored", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-16", "name": "MyWhoosh - Capacity Pyramid #1", "sport": "VirtualRide", "duration_min": 70.0, "avg_hr": 131.2, "avg_watts": 148, "trimp": 80.9, "method": "power_tss", "estimated_vo2max": 39.97, "source": "strava"}, {"date": "2026-06-15", "name": "Barra dos Coqueiros - S2 Seg Treino lo", "sport": "running", "duration_min": 48.0, "avg_hr": 158.0, "avg_watts": null, "trimp": 63.1, "method": "hrss", "estimated_vo2max": 41.51, "source": "garmin"}, {"date": "2026-06-15", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 25.0, "avg_hr": 69.0, "avg_watts": null, "trimp": 0.0, "method": "ignored", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-14", "name": "MyWhoosh - Endurance with Short Sprints", "sport": "VirtualRide", "duration_min": 62.0, "avg_hr": 101.5, "avg_watts": 108, "trimp": 38.1, "method": "power_tss", "estimated_vo2max": null, "source": "strava"}, {"date": "2026-06-13", "name": "S1 S\u00e1b Corrida", "sport": "treadmill_running", "duration_min": 34.0, "avg_hr": 152.0, "avg_watts": null, "trimp": 38.9, "method": "hrss", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-12", "name": "For\u00e7a", "sport": "strength_training", "duration_min": 6.0, "avg_hr": 78.0, "avg_watts": null, "trimp": 0.0, "method": "ignored", "estimated_vo2max": null, "source": "garmin"}, {"date": "2026-06-12", "name": "MyWhoosh - Over Under Efforts #2", "sport": "VirtualRide", "duration_min": 54.0, "avg_hr": 127.3, "avg_watts": 147, "trimp": 61.5, "method": "power_tss", "estimated_vo2max": 41.4, "source": "strava"}];
     
     // Parse Markdown for the briefing
     document.getElementById('briefing-content').innerHTML = marked.parse(rawBriefing || "*Nenhum briefing encontrado.*", {breaks: true});
-    
-    // Header Date Formatting
-    const headerDateEl = document.getElementById('current-date');
-    if (headerDateEl && headerDateEl.innerText.includes('-')) {
-        const [y, m, d] = headerDateEl.innerText.split('-');
-        headerDateEl.innerText = `${d}/${m}/${y}`;
-    }
 
     // Table Rendering
     const tbody = document.getElementById('activities-body');

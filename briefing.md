@@ -1,10 +1,10 @@
-### 🔋 Briefing Diário - 17/06/2026
+### 🔋 Briefing Diário - 18/06/2026
 
-**Recuperação:** 🟡 Apesar de um bom tempo e estrutura de sono, a frequência cardíaca de repouso ligeiramente elevada sugere uma recuperação moderada.
+**Recuperação:** 🟡 Sua recuperação é moderada; foque em otimizar o sono profundo para uma adaptação mais eficaz, especialmente após a semana de treinos.
 
-**Carga:** 🟡 Com um ACWR combinado de 1.32, a carga aguda está ligeiramente acima do ideal, indicando um status de treino 'UNPRODUCTIVE' que exige atenção.
+**Carga:** 🟢 Sua Carga Aguda:Crônica (ACWR: 1.11) está perfeitamente na zona ideal, e sua carga semanal combinada (397.7 TRIMP) está bem balanceada dentro da faixa recomendada.
 
-**Performance:** 🟢 Seu VO2Max combinado de 41.4 foi atualizado hoje, e as previsões de prova mostram um bom nível de aptidão, com destaque para a corrida.
+**Performance:** 🟡 Embora seu VO2Max combinado seja 41.4, o status 'Improdutivo' aponta para uma estagnação que precisamos superar com foco e estratégia.
 
 **Ação do Dia:**
-🎯 **Foco na Recuperação Ativa:** Após o intenso treino intervalado e natação de hoje, priorize a hidratação, nutrição de qualidade e um bom descanso para otimizar a assimilação da carga e virar o jogo do status "UNPRODUCTIVE" para ganhos reais!
+🎯 **Descanso Total / Recovery Passivo**: Permita que seu corpo se recupere completamente hoje. Um dia de descanso estratégico é crucial para reverter o status "Improdutivo" e absorver a carga de treino da semana. Vamos usar isso como um trampolim para a evolução!

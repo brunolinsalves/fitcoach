@@ -54,20 +54,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             margin: 0 auto;
         }}
 
-        header {{
-            margin-bottom: 2rem;
-            text-align: center;
-        }}
-        
-        header h1 {{
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }}
-
         /* Glassmorphism Cards */
         .glass-panel {{
             background: var(--bg-card);
@@ -334,10 +320,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <body>
 
 <div class="container">
-    <header>
-        <h1>Treino Dashboard</h1>
-        <p class="metric-sub" id="current-date">{date}</p>
-    </header>
 
     <div class="glass-panel hero-briefing" id="briefing-content">
         <!-- Briefing injected here -->
@@ -413,13 +395,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     
     // Parse Markdown for the briefing
     document.getElementById('briefing-content').innerHTML = marked.parse(rawBriefing || "*Nenhum briefing encontrado.*", {{breaks: true}});
-    
-    // Header Date Formatting
-    const headerDateEl = document.getElementById('current-date');
-    if (headerDateEl && headerDateEl.innerText.includes('-')) {{
-        const [y, m, d] = headerDateEl.innerText.split('-');
-        headerDateEl.innerText = `${{d}}/${{m}}/${{y}}`;
-    }}
 
     // Table Rendering
     const tbody = document.getElementById('activities-body');
