@@ -1,0 +1,56 @@
+{
+  "userId": 68542890,
+  "mostRecentVO2Max": {
+    "userId": 68542890,
+    "generic": {
+      "calendarDate": "2026-06-19",
+      "vo2MaxPreciseValue": 39.9,
+      "vo2MaxValue": 40.0,
+      "fitnessAge": 45,
+      "fitnessAgeDescription": 0,
+      "maxMetCategory": 0
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": null
+  },
+  "mostRecentTrainingLoadBalance": {
+    "userId": 68542890,
+    "metricsTrainingLoadBalanceDTOMap": null,
+    "recordedDevices": null
+  },
+  "mostRecentTrainingStatus": {
+    "userId": 68542890,
+    "latestTrainingStatusData": {
+      "3982518093": {
+        "calendarDate": "2026-06-21",
+        "sinceDate": "2026-06-17",
+        "weeklyTrainingLoad": 358,
+        "trainingStatus": 7,
+        "timestamp": 1782010800000,
+        "deviceId": 3982518093,
+        "loadTunnelMin": 330,
+        "loadTunnelMax": 735,
+        "loadLevelTrend": 2,
+        "sport": "RUNNING",
+        "subSport": "GENERIC",
+        "fitnessTrendSport": null,
+        "fitnessTrend": 3,
+        "trainingStatusFeedbackPhrase": null,
+        "trainingPaused": false,
+        "acuteTrainingLoadDTO": null,
+        "primaryTrainingDevice": false
+      }
+    },
+    "recordedDevices": [
+      {
+        "deviceId": 3982518093,
+        "imageURL": "https://s3.amazonaws.com/garmin-connect-prod/profile_images/90f6b83c-1499-48e3-937b-a76f79334905-71.png",
+        "deviceName": "Forerunner 935",
+        "category": 0
+      }
+    ],
+    "showSelector": false,
+    "lastPrimarySyncDate": null
+  },
+  "heatAltitudeAcclimationDTO": null
+}

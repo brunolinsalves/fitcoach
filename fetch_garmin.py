@@ -528,12 +528,24 @@ def main():
     print("Fetching fitness age...")
     fitness_age = extract_fitness_age(api, target_date)
 
+    print("Fetching profile user settings (gender, birthdate)...")
+    success_settings, settings_raw, err_settings = safe_api_call(api.connectapi, '/userprofile-service/userprofile/user-settings')
+    gender = None
+    birth_date = None
+    if success_settings and settings_raw and isinstance(settings_raw, dict):
+        user_data = settings_raw.get('userData', {})
+        if isinstance(user_data, dict):
+            gender = user_data.get('gender')
+            birth_date = user_data.get('birthDate')
+
     # Compile all data into a structured deterministic document
     garmin_report = {
         "metadata": {
             "date": target_date,
             "userDisplayName": api.display_name,
-            "fetchedAt": date.today().isoformat()
+            "fetchedAt": date.today().isoformat(),
+            "gender": gender,
+            "birthDate": birth_date
         },
         "metrics": {
             "dailySummary": daily_summary,

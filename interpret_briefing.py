@@ -22,6 +22,46 @@ except ImportError:
 # Load environment variables
 load_dotenv()
 
+VO2_TABLE_MEN = {
+    "20-29": {"Satisfatório": 41.7, "Bom": 45.4, "Excelente": 51.1, "Superior": 55.4},
+    "30-39": {"Satisfatório": 40.5, "Bom": 44.0, "Excelente": 48.3, "Superior": 54.0},
+    "40-49": {"Satisfatório": 38.5, "Bom": 42.4, "Excelente": 46.4, "Superior": 52.5},
+    "50-59": {"Satisfatório": 35.6, "Bom": 39.2, "Excelente": 43.4, "Superior": 48.9},
+    "60-69": {"Satisfatório": 32.3, "Bom": 35.5, "Excelente": 39.5, "Superior": 45.7},
+    "70-79": {"Satisfatório": 29.4, "Bom": 32.3, "Excelente": 36.7, "Superior": 42.1},
+}
+
+VO2_TABLE_WOMEN = {
+    "20-29": {"Satisfatório": 36.1, "Bom": 39.5, "Excelente": 43.9, "Superior": 49.6},
+    "30-39": {"Satisfatório": 34.4, "Bom": 37.8, "Excelente": 42.4, "Superior": 47.4},
+    "40-49": {"Satisfatório": 33.0, "Bom": 36.3, "Excelente": 39.7, "Superior": 45.3},
+    "50-59": {"Satisfatório": 30.1, "Bom": 33.0, "Excelente": 36.7, "Superior": 41.1},
+    "60-69": {"Satisfatório": 27.5, "Bom": 30.0, "Excelente": 33.0, "Superior": 37.8},
+    "70-79": {"Satisfatório": 25.9, "Bom": 28.1, "Excelente": 30.9, "Superior": 36.7},
+}
+
+def classify_vo2max(vo2: float, sex: str, age: int):
+    table = VO2_TABLE_WOMEN if sex == 'F' else VO2_TABLE_MEN
+    if age < 20:
+        age_group = "20-29"
+    elif age > 79:
+        age_group = "70-79"
+    else:
+        tens = int(age // 10)
+        age_group = f"{tens}0-{tens}9"
+        
+    thresholds = table[age_group]
+    if vo2 < thresholds["Satisfatório"]:
+        return "Fraco", "🔴"
+    elif vo2 < thresholds["Bom"]:
+        return "Satisfatório", "🟡"
+    elif vo2 < thresholds["Excelente"]:
+        return "Bom", "🟢"
+    elif vo2 < thresholds["Superior"]:
+        return "Excelente", "🟢"
+    else:
+        return "Superior", "🟢"
+
 def get_briefing_prompt(data):
     """Construct a clean, detailed prompt containing the Garmin data for Gemini."""
     metadata = data.get("metadata", {})
@@ -32,13 +72,43 @@ def get_briefing_prompt(data):
     if '-' in raw_date:
         y, m, d = raw_date.split('-')
         formatted_date = f"{d}/{m}/{y}"
+        
+    # Calculate age and sex for Gemini prompt
+    gender_raw = metadata.get("gender")
+    sex_str = "Masculino" if gender_raw == "MALE" else ("Feminino" if gender_raw == "FEMALE" else "Masculino")
+    
+    birth_date_str = metadata.get("birthDate")
+    age = 39 # default fallback
+    if birth_date_str:
+        try:
+            from datetime import date as dt_date
+            birth_date_obj = dt_date.fromisoformat(birth_date_str)
+            ref_date = dt_date.fromisoformat(raw_date) if raw_date else dt_date.today()
+            age = ref_date.year - birth_date_obj.year - ((ref_date.month, ref_date.day) < (birth_date_obj.month, birth_date_obj.day))
+        except Exception:
+            pass
+    else:
+        fitness_age_obj = metrics.get("fitnessAge", {})
+        if isinstance(fitness_age_obj, dict) and fitness_age_obj.get("chronologicalAge"):
+            age = fitness_age_obj.get("chronologicalAge")
+        else:
+            ts = metrics.get("trainingStatus", {})
+            age = ts.get("fitnessAge") or 39
+            
+    # Get the age ranges for prompt description
+    men_range = VO2_TABLE_MEN.get(
+        "20-29" if age < 20 else ("70-79" if age > 79 else f"{int(age // 10)}0-{int(age // 10)}9")
+    )
+    women_range = VO2_TABLE_WOMEN.get(
+        "20-29" if age < 20 else ("70-79" if age > 79 else f"{int(age // 10)}0-{int(age // 10)}9")
+    )
     
     # Format the data into a readable text chunk for the model
     data_str = json.dumps(metrics, indent=2, ensure_ascii=False)
     
     prompt = f"""
 Você é um treinador de alto rendimento e cientista do esporte especialista em fisiologia da corrida e ciclismo.
-Analise os seguintes dados fisiológicos e de performance do atleta para o dia {formatted_date} e gere um briefing curto, direto ao ponto e motivador.
+Analise os seguintes dados fisiológicos e de performance do atleta (Sexo: {sex_str}, Idade: {age} anos) para o dia {formatted_date} e gere um briefing curto, direto ao ponto e motivador.
 
 Nota: Os dados podem incluir atividades de ciclismo indoor (MyWhoosh/Strava) e corrida (Garmin). Os campos com sufixo "_combined" representam métricas recalculadas considerando TODAS as atividades (corrida + ciclismo). Prefira esses valores combinados quando disponíveis. O campo "recentActivities" lista as atividades da última semana com o TRIMP calculado de cada uma.
 
@@ -50,16 +120,19 @@ Dados fisiológicos em formato JSON:
 Instruções para a análise:
 1. **Recuperação**: Avalie com base no Sleep Score, Sleep Quality, HRV Status/Averages e Training Readiness. Determine o semáforo correspondente:
    - 🟢 (Verde): Excelente recuperação. Bons níveis de HRV e sono reparador.
-   - 🟡 (Amarelo): Recuperação moderada. Cuidado com noites mal dormidas ou HRV em queda.
+   - 🟡 (Amarelo): Recuperação moderada. Cuidado com noites mal dormidas ou HRV em queue/queda.
    - 🔴 (Vermelho): Recuperação precária. HRV desequilibrado, sono ruim ou prontidão muito baixa.
 2. **Carga**: Avalie com base no ACWR (Acute:Chronic Workload Ratio), Carga Semanal (Acute/Chronic load) e status de treino.
    - 🟢 (Verde): ACWR na zona ideal (0.8 a 1.3). Carga balanceada.
    - 🟡 (Amarelo): ACWR ligeiramente fora da zona ideal (1.3 a 1.5 ou 0.5 a 0.8), sugerindo risco moderado de lesão ou destreino.
    - 🔴 (Vermelho): ACWR em zona de perigo (>1.5 indica alto risco de lesão por pico de carga, <0.5 indica destreino acentuado).
-3. **Performance**: Avalie com base no VO2Max atual, peso recente e Previsões de Prova.
-   - 🟢 (Verde): Performance evoluindo ou estável em patamar alto. Treinos produtivos.
-   - 🟡 (Amarelo): Performance estagnada ou pequenos ajustes necessários (ex: peso flutuando ou status destreinado).
-   - 🔴 (Vermelho): Queda de rendimento, destreino visível ou fadiga crônica impactando os tempos.
+3. **Performance**: Avalie o VO2Max atual com base nas classificações Cooper padrão para a idade e sexo do atleta:
+   - Para um homem de {age} anos: Fraco (<{men_range['Satisfatório']}), Satisfatório ({men_range['Satisfatório']}-{men_range['Bom']}), Bom ({men_range['Bom']}-{men_range['Excelente']}), Excelente ({men_range['Excelente']}-{men_range['Superior']}), Superior (>={men_range['Superior']}).
+   - Para uma mulher de {age} anos: Fraco (<{women_range['Satisfatório']}), Satisfatório ({women_range['Satisfatório']}-{women_range['Bom']}), Bom ({women_range['Bom']}-{women_range['Excelente']}), Excelente ({women_range['Excelente']}-{women_range['Superior']}), Superior (>={women_range['Superior']}).
+   - Use o "estimated_vo2max_combined" se disponível. Determine o semáforo:
+     - 🟢 (Verde): Bom, Excelente ou Superior.
+     - 🟡 (Amarelo): Satisfatório (precisa de novos estímulos para evoluir).
+     - 🔴 (Vermelho): Fraco ou destreino visível.
 
 Gere o briefing de forma estruturada, em Português do Brasil, exatamente no formato abaixo. Seja curto e direto ao ponto (no máximo uma frase explicativa para cada categoria):
 
@@ -69,7 +142,7 @@ Gere o briefing de forma estruturada, em Português do Brasil, exatamente no for
 
 **Carga:** [Semáforo 🟢/🟡/🔴] [Uma frase concisa sobre a relação de carga aguda/crônica (ACWR: [valor]) e se o volume está adequado].
 
-**Performance:** [Semáforo 🟢/🟡/🔴] [Uma frase concisa sobre o VO2Max ([valor] - use o combined se houver) e evolução recente nas previsões de prova].
+**Performance:** [Semáforo 🟢/🟡/🔴] [Uma frase concisa sobre o VO2Max ([valor] - use o combined se houver) e sua classificação (ex: Satisfatório) baseado na idade/sexo].
 
 **Ação do Dia:**
 🎯 **[Nome da Ação]**: [Instrução direta e acionável do que o atleta deve fazer hoje: e.g. "Treino Regenerativo (rodagem muito leve de 30-40 min)", "Treino de Tiros/Intervalado de Alta Intensidade", "Treino de Volume/Longão em Z2", "Descanso Total / Recovery Passivo"].
@@ -177,23 +250,65 @@ def generate_local_fallback(data):
         load_desc += " (inclui ciclismo Strava)"
             
     # --- PERFORMANCE ---
+    metadata = data.get("metadata", {})
+    raw_date = metadata.get("date", "")
     vo2max = status.get("estimated_vo2max_combined") or status.get("vo2Max")
     fitness_age = status.get("estimated_fitness_age_combined") or status.get("fitnessAge")
     perf_val = "🟡"
     perf_desc = f"VO2Max: {vo2max or 'n/a'}."
     
     if vo2max:
+        # Determine sex
+        gender_raw = metadata.get("gender")
+        sex = None
+        if gender_raw == "MALE":
+            sex = "M"
+        elif gender_raw == "FEMALE":
+            sex = "F"
+            
+        if not sex:
+            strava_tokens_path = "strava_tokens.json"
+            if os.path.exists(strava_tokens_path):
+                try:
+                    with open(strava_tokens_path, "r", encoding="utf-8") as sf:
+                        strava_tokens = json.load(sf)
+                        athlete = strava_tokens.get("athlete", {})
+                        sex_raw = athlete.get("sex")
+                        if sex_raw in ("M", "F"):
+                            sex = sex_raw
+                except Exception:
+                    pass
+        if not sex:
+            sex = "M"
+            
+        # Determine age
+        birth_date_str = metadata.get("birthDate")
+        age = None
+        if birth_date_str:
+            try:
+                from datetime import date as dt_date
+                birth_date_obj = dt_date.fromisoformat(birth_date_str)
+                ref_date = dt_date.fromisoformat(raw_date) if raw_date else dt_date.today()
+                age = ref_date.year - birth_date_obj.year - ((ref_date.month, ref_date.day) < (birth_date_obj.month, birth_date_obj.day))
+            except Exception:
+                pass
+        if age is None:
+            fitness_age_obj = metrics.get("fitnessAge", {})
+            if isinstance(fitness_age_obj, dict):
+                age = fitness_age_obj.get("chronologicalAge")
+        if age is None:
+            age = status.get("fitnessAge")
+        if age is None:
+            age = 39
+            
+        label, semaphor = classify_vo2max(float(vo2max), sex, age)
+        perf_val = semaphor
+        
         if status.get("estimated_vo2max_combined"):
-            perf_desc = f"VO2Max Combinado: {vo2max}."
-        if vo2max >= 50:
-            perf_val = "🟢"
-            perf_desc = f"Performance forte. {perf_desc}"
-        elif vo2max >= 40:
-            perf_val = "🟡"
-            perf_desc = f"Performance moderada. {perf_desc}"
+            perf_desc = f"Performance {label}. VO2Max Combinado: {vo2max}."
         else:
-            perf_val = "🔴"
-            perf_desc = f"Performance abaixo do esperado. {perf_desc}"
+            perf_desc = f"Performance {label}. VO2Max: {vo2max}."
+            
         if fitness_age:
             if status.get("estimated_fitness_age_combined"):
                 perf_desc += f" Idade fitness recalculada: {fitness_age}."

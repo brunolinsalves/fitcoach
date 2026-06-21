@@ -76,6 +76,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .color-red {{ color: #ef4444; }}
         .color-gray {{ color: #94a3b8; }}
         .color-blue {{ color: #3b82f6; }}
+        .color-purple {{ color: #8b5cf6; }}
 
         /* Gauge styles */
         .gauge-container {{
@@ -121,6 +122,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             background: rgba(239, 68, 68, 0.15);
             color: #ef4444;
             border: 1px solid rgba(239, 68, 68, 0.3);
+        }}
+        .zone-blue {{
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }}
+        .zone-purple {{
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+            border: 1px solid rgba(139, 92, 246, 0.3);
         }}
 
         .gauge-bar-container {{
@@ -276,7 +287,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <td valign="top" style="width: 32%; padding-right: 2%; border: none;">
                 <div class="glass-panel" style="min-height: 200px; margin-bottom: 0;">
                     <h3 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">VO2 Máx</h3>
-                    <div class="metric-value {vo2_color}">{vo2_val}</div>
+                    {vo2_gauge_html}
                     <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
                         Idade Fitness: {fitness_age} anos<br>
                         Corrida: {run_vo2} | Ciclismo: {cyc_vo2}
@@ -384,6 +395,84 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </body>
 </html>
 """
+
+VO2_TABLE_MEN = {
+    "20-29": {"Satisfatório": 41.7, "Bom": 45.4, "Excelente": 51.1, "Superior": 55.4},
+    "30-39": {"Satisfatório": 40.5, "Bom": 44.0, "Excelente": 48.3, "Superior": 54.0},
+    "40-49": {"Satisfatório": 38.5, "Bom": 42.4, "Excelente": 46.4, "Superior": 52.5},
+    "50-59": {"Satisfatório": 35.6, "Bom": 39.2, "Excelente": 43.4, "Superior": 48.9},
+    "60-69": {"Satisfatório": 32.3, "Bom": 35.5, "Excelente": 39.5, "Superior": 45.7},
+    "70-79": {"Satisfatório": 29.4, "Bom": 32.3, "Excelente": 36.7, "Superior": 42.1},
+}
+
+VO2_TABLE_WOMEN = {
+    "20-29": {"Satisfatório": 36.1, "Bom": 39.5, "Excelente": 43.9, "Superior": 49.6},
+    "30-39": {"Satisfatório": 34.4, "Bom": 37.8, "Excelente": 42.4, "Superior": 47.4},
+    "40-49": {"Satisfatório": 33.0, "Bom": 36.3, "Excelente": 39.7, "Superior": 45.3},
+    "50-59": {"Satisfatório": 30.1, "Bom": 33.0, "Excelente": 36.7, "Superior": 41.1},
+    "60-69": {"Satisfatório": 27.5, "Bom": 30.0, "Excelente": 33.0, "Superior": 37.8},
+    "70-79": {"Satisfatório": 25.9, "Bom": 28.1, "Excelente": 30.9, "Superior": 36.7},
+}
+
+def get_vo2_percentage_and_zone(vo2: float, sex: str, age: int):
+    # Get table based on gender
+    table = VO2_TABLE_WOMEN if sex == 'F' else VO2_TABLE_MEN
+    
+    # Get age group
+    if age < 20:
+        age_group = "20-29"
+    elif age > 79:
+        age_group = "70-79"
+    else:
+        tens = int(age // 10)
+        age_group = f"{tens}0-{tens}9"
+        
+    thresholds = table[age_group]
+    t_sat = thresholds["Satisfatório"]
+    t_bom = thresholds["Bom"]
+    t_exc = thresholds["Excelente"]
+    t_sup = thresholds["Superior"]
+    
+    # Range configuration: we set min_val to t_sat - 6.0 (at least 15.0) and max_val to t_sup + 6.0
+    min_val = max(15.0, t_sat - 6.0)
+    max_val = t_sup + 6.0
+    
+    # Pieces of 20% each
+    if vo2 <= min_val:
+        pct = 0.0
+        zone = "Fraco"
+        color_class = "color-red"
+        zone_class = "zone-red"
+    elif vo2 < t_sat:
+        pct = (vo2 - min_val) / (t_sat - min_val) * 20.0
+        zone = "Fraco"
+        color_class = "color-red"
+        zone_class = "zone-red"
+    elif vo2 < t_bom:
+        pct = 20.0 + (vo2 - t_sat) / (t_bom - t_sat) * 20.0
+        zone = "Satisfatório"
+        color_class = "color-yellow"
+        zone_class = "zone-yellow"
+    elif vo2 < t_exc:
+        pct = 40.0 + (vo2 - t_bom) / (t_exc - t_bom) * 20.0
+        zone = "Bom"
+        color_class = "color-blue"
+        zone_class = "zone-blue"
+    elif vo2 < t_sup:
+        pct = 60.0 + (vo2 - t_exc) / (t_sup - t_exc) * 20.0
+        zone = "Excelente"
+        color_class = "color-green"
+        zone_class = "zone-green"
+    else:
+        if vo2 >= max_val:
+            pct = 100.0
+        else:
+            pct = 80.0 + (vo2 - t_sup) / (max_val - t_sup) * 20.0
+        zone = "Superior"
+        color_class = "color-purple"
+        zone_class = "zone-purple"
+        
+    return pct, zone, color_class, zone_class, min_val, t_sat, t_bom, t_exc, t_sup, max_val
 
 def markdown_to_html(md_text):
     if not md_text:
@@ -555,6 +644,59 @@ def main():
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
             
+    metadata = data.get("metadata", {})
+    raw_date = metadata.get("date", date.today().isoformat())
+
+    # 1. Determine gender (sex)
+    gender_raw = metadata.get("gender") # "MALE" or "FEMALE" or None
+    sex = None
+    if gender_raw == "MALE":
+        sex = "M"
+    elif gender_raw == "FEMALE":
+        sex = "F"
+        
+    # Fallback to strava_tokens.json
+    if not sex:
+        strava_tokens_path = "strava_tokens.json"
+        if os.path.exists(strava_tokens_path):
+            try:
+                with open(strava_tokens_path, "r", encoding="utf-8") as sf:
+                    strava_tokens = json.load(sf)
+                    athlete = strava_tokens.get("athlete", {})
+                    sex_raw = athlete.get("sex")
+                    if sex_raw in ("M", "F"):
+                        sex = sex_raw
+            except Exception:
+                pass
+    if not sex:
+        sex = "M" # default fallback
+        
+    # 2. Determine age
+    age = None
+    birth_date_str = metadata.get("birthDate")
+    if birth_date_str:
+        try:
+            birth_date_obj = date.fromisoformat(birth_date_str)
+            ref_date = date.fromisoformat(raw_date) if raw_date else date.today()
+            age = ref_date.year - birth_date_obj.year - ((ref_date.month, ref_date.day) < (birth_date_obj.month, birth_date_obj.day))
+        except Exception:
+            pass
+            
+    # Fallback to fitnessAge / chronologicalAge
+    if age is None:
+        metrics = data.get("metrics", {})
+        fitness_age_obj = metrics.get("fitnessAge", {})
+        if isinstance(fitness_age_obj, dict):
+            age = fitness_age_obj.get("chronologicalAge")
+            
+    # Second Fallback to trainingStatus's fitnessAge
+    if age is None:
+        ts = data.get("metrics", {}).get("trainingStatus", {})
+        age = ts.get("fitnessAge")
+        
+    if age is None:
+        age = 39 # default fallback
+            
     briefing_text = ""
     if os.path.exists(briefing_path):
         with open(briefing_path, "r", encoding="utf-8") as f:
@@ -631,6 +773,49 @@ def main():
         """
     else:
         acwr_gauge_html = """
+        <div class="gauge-container">
+            <div class="gauge-header">
+                <span class="gauge-value">n/a</span>
+                <span class="gauge-zone zone-gray">Sem dados</span>
+            </div>
+            <div class="gauge-bar-container" style="background: #334155;"></div>
+        </div>
+        """
+
+    # Build VO2 Max gauge HTML
+    if isinstance(vo2_val, (int, float)):
+        val_float = float(vo2_val)
+        pct, zone_name, val_color_class, zone_class, min_val, t_sat, t_bom, t_exc, t_sup, max_val = get_vo2_percentage_and_zone(val_float, sex, age)
+        
+        vo2_gauge_html = f"""
+        <div class="gauge-container">
+            <div class="gauge-header">
+                <span class="gauge-value {val_color_class}">{val_float:.1f}</span>
+                <span class="gauge-zone {zone_class}">{zone_name}</span>
+            </div>
+            <div class="gauge-bar-container" style="background: linear-gradient(to right, 
+                #ef4444 0%, #ef4444 20%, 
+                #f59e0b 20%, #f59e0b 40%, 
+                #3b82f6 40%, #3b82f6 60%, 
+                #10b981 60%, #10b981 80%, 
+                #8b5cf6 80%, #8b5cf6 100%
+            );">
+                <div class="gauge-marker" style="margin-left: {pct}%;"></div>
+            </div>
+            <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 11px; color: #94a3b8; margin-top: 4px; border: none;">
+                <tr>
+                    <td style="width: 20%; text-align: left; border: none; padding: 0;">{min_val:.1f}</td>
+                    <td style="width: 20%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_sat:.1f}</td>
+                    <td style="width: 20%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_bom:.1f}</td>
+                    <td style="width: 20%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_exc:.1f}</td>
+                    <td style="width: 10%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_sup:.1f}</td>
+                    <td style="width: 10%; text-align: right; border: none; padding: 0;">{max_val:.1f}+</td>
+                </tr>
+            </table>
+        </div>
+        """
+    else:
+        vo2_gauge_html = """
         <div class="gauge-container">
             <div class="gauge-header">
                 <span class="gauge-value">n/a</span>
@@ -716,6 +901,7 @@ def main():
         date=header_date,
         acwr_val=f"{acwr_val:.2f}" if isinstance(acwr_val, float) else (acwr_val or "n/a"),
         acwr_gauge_html=acwr_gauge_html,
+        vo2_gauge_html=vo2_gauge_html,
         acute_val=acute_val,
         chronic_val=chronic_val,
         weekly_val=weekly_val,
