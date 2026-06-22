@@ -17,6 +17,30 @@ import os
 import webbrowser
 from pathlib import Path
 from dotenv import load_dotenv
+import datetime
+
+# Store the original print function to avoid recursion
+_print = print
+
+def print(*args, **kwargs):
+    now_str = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    prefix = f"[{now_str}] "
+    
+    if not args:
+        _print(*args, **kwargs)
+        return
+        
+    first = args[0]
+    if isinstance(first, str):
+        leading_newlines = ""
+        while first.startswith('\n'):
+            leading_newlines += '\n'
+            first = first[1:]
+        new_first = f"{leading_newlines}{prefix}{first}"
+    else:
+        new_first = f"{prefix}{first}"
+        
+    _print(new_first, *args[1:], **kwargs)
 
 # Load environment variables
 load_dotenv()
