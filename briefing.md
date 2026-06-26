@@ -1,10 +1,10 @@
-### 🔋 Briefing Diário - 22/06/2026
+### 🔋 Briefing Diário - 26/06/2026
 
-**Recuperação:** 🔴 Sono curto (05:59:00). Recuperação comprometida.
+**Recuperação:** 🔴 Seu sono foi de excelente duração e qualidade, mas o Batimento Cardíaco em Repouso elevado (68 bpm vs 54 bpm 7d avg) sinaliza estresse fisiológico e recuperação precária.
 
-**Carga:** 🟢 Carga balanceada. ACWR: 1.28. Status: UNPRODUCTIVE. (inclui ciclismo Strava)
+**Carga:** 🟡 Seu ACWR (0.88) indica uma carga aguda/crônica bem gerenciada, porém o status 'Improdutivo' aponta que os estímulos recentes não estão gerando os ganhos esperados.
 
-**Performance:** 🟡 Performance Satisfatório. VO2Max Combinado: 41.4. Idade fitness recalculada: 44.
+**Performance:** 🟡 Com VO2Max combinado de 41.4, sua performance atual é 'Satisfatória' para sua idade e sexo, com claro potencial para evoluir.
 
 **Ação do Dia:**
-🎯 **Descanso Total / Recovery Ativo Leve**: Fisiologia indica alta fadiga. Priorize recuperação.
+🎯 **Descanso Total / Recovery Passivo**: Permita que seu corpo se recupere plenamente hoje, focando em baixar seu RHR e assimilar os treinos passados, preparando-se para as próximas sessões com força renovada e eficiência máxima.

@@ -288,7 +288,9 @@ def extract_training_status(api, target_date):
             4: "PRODUCTIVE",
             5: "PEAKING",
             6: "OVERREACHING",
-            7: "UNPRODUCTIVE",
+            7: "PRODUCTIVE",       # Validado empiricamente: VO2Max subindo + relógio mostra "Produtivo"
+            8: "UNPRODUCTIVE",
+            9: "STRAINED",
         }
         result["trainingStatus"] = ts_labels.get(ts_code, f"UNKNOWN({ts_code})")
         result["trainingStatusCode"] = ts_code
