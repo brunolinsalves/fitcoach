@@ -284,11 +284,11 @@ def extract_training_status(api, target_date):
             0: "NOT_APPLICABLE",
             1: "DETRAINING",
             2: "RECOVERY",
-            3: "MAINTAINING",
-            4: "PRODUCTIVE",
+            3: "MAINTAINING", 
+            4: "MAINTAINING",      # Validado no site da garmin connect
             5: "PEAKING",
             6: "OVERREACHING",
-            7: "PRODUCTIVE",       # Validado empiricamente: VO2Max subindo + relógio mostra "Produtivo"
+            7: "PRODUCTIVE",       # Validado no site da garmin connect
             8: "UNPRODUCTIVE",
             9: "STRAINED",
         }

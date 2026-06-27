@@ -1,10 +1,10 @@
-### 🔋 Briefing Diário - 26/06/2026
+### 🔋 Briefing Diário - 27/06/2026
 
-**Recuperação:** 🔴 Seu sono foi de excelente duração e qualidade, mas o Batimento Cardíaco em Repouso elevado (68 bpm vs 54 bpm 7d avg) sinaliza estresse fisiológico e recuperação precária.
+**Recuperação:** 🟢 O sono prolongado e de qualidade, juntamente com o baixo estresse, indicam uma excelente recuperação.
 
-**Carga:** 🟡 Seu ACWR (0.88) indica uma carga aguda/crônica bem gerenciada, porém o status 'Improdutivo' aponta que os estímulos recentes não estão gerando os ganhos esperados.
+**Carga:** 🟢 Com um ACWR combinado de 1.21, sua carga de treino está idealmente balanceada, impulsionando a produtividade.
 
-**Performance:** 🟡 Com VO2Max combinado de 41.4, sua performance atual é 'Satisfatória' para sua idade e sexo, com claro potencial para evoluir.
+**Performance:** 🟡 Seu VO2Max combinado de 41.2 é satisfatório para sua idade, indicando um bom ponto de partida com margem para crescimento.
 
 **Ação do Dia:**
-🎯 **Descanso Total / Recovery Passivo**: Permita que seu corpo se recupere plenamente hoje, focando em baixar seu RHR e assimilar os treinos passados, preparando-se para as próximas sessões com força renovada e eficiência máxima.
+🎯 **Recuperação Essencial**: Após os esforços do dia, concentre-se em um Descanso Total / Recovery Passivo para otimizar a assimilação do treino.
