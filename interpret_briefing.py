@@ -108,44 +108,110 @@ def get_briefing_prompt(data):
     
     prompt = f"""
 Você é um treinador de alto rendimento e cientista do esporte especialista em fisiologia da corrida e ciclismo.
-Analise os seguintes dados fisiológicos e de performance do atleta (Sexo: {sex_str}, Idade: {age} anos) para o dia {formatted_date} e gere um briefing curto, direto ao ponto e motivador.
 
-Nota: Os dados podem incluir atividades de ciclismo indoor (MyWhoosh/Strava) e corrida (Garmin). Os campos com sufixo "_combined" representam métricas recalculadas considerando TODAS as atividades (corrida + ciclismo). Prefira esses valores combinados quando disponíveis. O campo "recentActivities" lista as atividades da última semana com o TRIMP calculado de cada uma.
+Analise os seguintes dados fisiológicos e de performance do atleta (Sexo: {sex_str}, Idade: {age} anos) para o dia {formatted_date} e gere um briefing detalhado, direto ao ponto e motivador.
+
+**Sobre os dados:**
+- Os dados podem incluir atividades de ciclismo indoor (MyWhoosh/Strava) e corrida (Garmin).
+- Campos com sufixo "_combined" representam métricas recalculadas considerando TODAS as atividades. **Sempre prefira esses valores quando disponíveis.**
+- O campo "recentActivities" lista as atividades da última semana com o TRIMP calculado de cada uma — use para identificar padrão de carga e tendência.
 
 Dados fisiológicos em formato JSON:
 ```json
 {data_str}
 ```
 
-Instruções para a análise:
-1. **Recuperação**: Avalie com base no Sleep Score, Sleep Quality, HRV Status/Averages e Training Readiness. Determine o semáforo correspondente:
-   - 🟢 (Verde): Excelente recuperação. Bons níveis de HRV e sono reparador.
-   - 🟡 (Amarelo): Recuperação moderada. Cuidado com noites mal dormidas ou HRV em queue/queda.
-   - 🔴 (Vermelho): Recuperação precária. HRV desequilibrado, sono ruim ou prontidão muito baixa.
-2. **Carga**: Avalie com base no ACWR (Acute:Chronic Workload Ratio), Carga Semanal (Acute/Chronic load) e status de treino.
-   - 🟢 (Verde): ACWR na zona ideal (0.8 a 1.3). Carga balanceada.
-   - 🟡 (Amarelo): ACWR ligeiramente fora da zona ideal (1.3 a 1.5 ou 0.5 a 0.8), sugerindo risco moderado de lesão ou destreino.
-   - 🔴 (Vermelho): ACWR em zona de perigo (>1.5 indica alto risco de lesão por pico de carga, <0.5 indica destreino acentuado).
-3. **Performance**: Avalie o VO2Max atual com base nas classificações Cooper padrão para a idade e sexo do atleta:
-   - Para um homem de {age} anos: Fraco (<{men_range['Satisfatório']}), Satisfatório ({men_range['Satisfatório']}-{men_range['Bom']}), Bom ({men_range['Bom']}-{men_range['Excelente']}), Excelente ({men_range['Excelente']}-{men_range['Superior']}), Superior (>={men_range['Superior']}).
-   - Para uma mulher de {age} anos: Fraco (<{women_range['Satisfatório']}), Satisfatório ({women_range['Satisfatório']}-{women_range['Bom']}), Bom ({women_range['Bom']}-{women_range['Excelente']}), Excelente ({women_range['Excelente']}-{women_range['Superior']}), Superior (>={women_range['Superior']}).
-   - Use o "estimated_vo2max_combined" se disponível. Determine o semáforo:
-     - 🟢 (Verde): Bom, Excelente ou Superior.
-     - 🟡 (Amarelo): Satisfatório (precisa de novos estímulos para evoluir).
-     - 🔴 (Vermelho): Fraco ou destreino visível.
+---
 
-Gere o briefing de forma estruturada, em Português do Brasil, exatamente no formato abaixo. Seja curto e direto ao ponto (no máximo uma frase explicativa para cada categoria):
+**INSTRUÇÕES DE ANÁLISE:**
 
-### 🔋 Briefing Diário - {formatted_date}
+### 1. 🔋 Recuperação
+Avalie com base em: Sleep Score, Sleep Quality, HRV Status, HRV Averages e Training Readiness.
 
-**Recuperação:** [Semáforo 🟢/🟡/🔴] [Uma frase concisa explicando a qualidade da recuperação baseado no sono, HRV e prontidão].
+**Semáforo:**
+- 🟢 Verde: Excelente — HRV estável ou em alta, sono reparador, prontidão elevada.
+- 🟡 Amarelo: Moderada — HRV em queda leve, sono fragmentado ou prontidão intermediária.
+- 🔴 Vermelho: Precária — HRV desequilibrado, sono ruim ou prontidão muito baixa.
 
-**Carga:** [Semáforo 🟢/🟡/🔴] [Uma frase concisa sobre a relação de carga aguda/crônica (ACWR: [valor]) e se o volume está adequado].
+**Detalhe esperado na saída (2–3 frases):**
+- Qualidade objetiva do sono (score e duração se disponível)
+- Estado do HRV: estável, em alta ou em queda, e o que isso indica fisiologicamente
+- Nível de prontidão e implicação prática para o treino de hoje
 
-**Performance:** [Semáforo 🟢/🟡/🔴] [Uma frase concisa sobre o VO2Max ([valor] - use o combined se houver) e sua classificação (ex: Satisfatório) baseado na idade/sexo].
+---
 
-**Ação do Dia:**
-🎯 **[Nome da Ação]**: [Instrução direta e acionável do que o atleta deve fazer hoje: e.g. "Treino Regenerativo (rodagem muito leve de 30-40 min)", "Treino de Tiros/Intervalado de Alta Intensidade", "Treino de Volume/Longão em Z2", "Descanso Total / Recovery Passivo"].
+### 2. ⚡ Carga de Treino
+Avalie com base em: ACWR, Acute Load (carga aguda), Chronic Load (carga crônica), TRIMP das atividades recentes e status de treino.
+
+**Semáforo:**
+- 🟢 Verde: ACWR entre 0.8 e 1.3 — zona ideal de adaptação.
+- 🟡 Amarelo: ACWR entre 1.3–1.5 ou 0.5–0.8 — risco moderado (sobrecarga ou destreino leve).
+- 🔴 Vermelho: ACWR > 1.5 (alto risco de lesão) ou < 0.5 (destreino acentuado).
+
+**Detalhe esperado na saída (2–3 frases):**
+- Valores de ACWR, carga aguda e crônica com interpretação
+- Tendência da semana baseada no "recentActivities" (carga crescente, estável ou decrescente?)
+- Se houver risco de overreaching ou janela de adaptação favorável, mencionar explicitamente
+
+---
+
+### 3. 🏆 Performance
+Use "estimated_vo2max_combined" se disponível; caso contrário, use o VO2Max disponível.
+
+**Classificações Cooper por sexo e idade ({age} anos):**
+- Homem: Fraco (<{men_range['Satisfatório']}), Satisfatório ({men_range['Satisfatório']}–{men_range['Bom']}), Bom ({men_range['Bom']}–{men_range['Excelente']}), Excelente ({men_range['Excelente']}–{men_range['Superior']}), Superior (≥{men_range['Superior']})
+- Mulher: Fraco (<{women_range['Satisfatório']}), Satisfatório ({women_range['Satisfatório']}–{women_range['Bom']}), Bom ({women_range['Bom']}–{women_range['Excelente']}), Excelente ({women_range['Excelente']}–{women_range['Superior']}), Superior (≥{women_range['Superior']})
+
+**Semáforo:**
+- 🟢 Verde: Bom, Excelente ou Superior.
+- 🟡 Amarelo: Satisfatório — há espaço de evolução.
+- 🔴 Vermelho: Fraco ou queda visível em relação a registros anteriores.
+
+**Detalhe esperado na saída (2 frases):**
+- VO2Max atual com classificação e contexto (próximo ao limite superior/inferior da faixa?)
+- Se houver tendência recente de melhora ou estagnação, comentar
+
+---
+
+### 4. 🔍 Análise Integrada
+**Esta seção é obrigatória.** Cruze as três dimensões acima e identifique o padrão dominante do atleta hoje. Exemplos de raciocínio esperado:
+- Recuperação 🔴 + Carga 🔴 + Performance 🟢 → "Você está produzindo resultados, mas o sistema está no limite. Risco real de overreaching se não houver recuo agora."
+- Recuperação 🟢 + Carga 🟡 + Performance 🟢 → "Janela favorável para um estímulo de qualidade hoje. A carga pode subir com segurança."
+- Recuperação 🟡 + Carga 🟢 + Performance 🟡 → "Momento de consistência. Treino moderado hoje consolida a base sem adicionar risco."
+
+Escreva 2–3 frases sintetizando o estado geral e a lógica do que recomendar.
+
+---
+
+### 5. 🎯 Ação do Dia
+Com base na análise integrada, prescreva **uma ação específica e acionável**. Seja concreto: inclua intensidade (zona), duração estimada e objetivo fisiológico da sessão.
+
+**Exemplos de nível de detalhe esperado:**
+- ✅ "Rodagem regenerativa de 35–40 min em Z1 (abaixo de 130 bpm) para estimular recuperação ativa sem adicionar carga ao sistema nervoso central."
+- ✅ "Intervalado 6×4 min em Z4 (85–90% FCmax) com 3 min de recuperação ativa. Objetivo: estímulo de VO2Max aproveitando a boa prontidão de hoje."
+- ✅ "Descanso total ou mobilidade de 20 min. Seu sistema não está em condições de absorver treino produtivo hoje — recuperação passiva é a prescrição correta."
+- ❌ (evitar) "Faça um treino leve." — vago demais.
+
+---
+
+**FORMATO DE SAÍDA — siga exatamente:**
+
+🔋 Briefing Diário — {formatted_date}
+
+**Recuperação:** [🟢/🟡/🔴]
+[2–3 frases: sono + HRV + prontidão com interpretação]
+
+**Carga:** [🟢/🟡/🔴]
+[2–3 frases: ACWR + tendência semanal + risco ou oportunidade]
+
+**Performance:** [🟢/🟡/🔴]
+[2 frases: VO2Max com classificação + tendência]
+
+**Análise Integrada:** 🔍
+[2–3 frases cruzando as três dimensões e explicando a lógica da recomendação]
+
+**Ação do Dia:** 🎯
+[Prescrição específica com zona de intensidade, duração e objetivo fisiológico]
 """
     return prompt
 
