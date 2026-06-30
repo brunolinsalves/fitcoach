@@ -310,7 +310,7 @@ def extract_training_status(api, target_date):
                 result["acwr"] = round(result["acuteLoad"] / result["chronicLoad"], 2)
         
         # If no acute DTO, try to estimate ACWR from weekly load and tunnel
-        if "acwr" not in result and result.get("weeklyTrainingLoad") and result.get("loadTunnelMin"):
+        if "acwr" not in result and result.get("weeklyTrainingLoad") and result.get("loadTunnelMin") and result.get("loadTunnelMax"):
             tunnel_mid = (result["loadTunnelMin"] + result["loadTunnelMax"]) / 2
             if tunnel_mid > 0:
                 result["acwr_estimated"] = round(result["weeklyTrainingLoad"] / tunnel_mid, 2)
@@ -410,17 +410,25 @@ def extract_daily_summary(api, target_date):
         return {"error": f"Erro ao buscar resumo diário: {err}"}
 
     # Steps and calories
-    steps = summary.get("totalSteps", 0)
-    step_goal = summary.get("dailyStepGoal") or summary.get("stepGoal", 0)
+    steps = summary.get("totalSteps")
+    steps = steps if steps is not None else 0
+
+    step_goal = summary.get("dailyStepGoal") or summary.get("stepGoal")
+    step_goal = step_goal if step_goal is not None else 0
+
     active_cal = summary.get("activeKilocalories")
 
     # If active calories is not direct, compute it: Total - BMR
     if active_cal is None:
-        total_cal = summary.get("totalKilocalories", 0)
-        bmr_cal = summary.get("bmrKilocalories", 0)
+        total_cal = summary.get("totalKilocalories")
+        total_cal = total_cal if total_cal is not None else 0
+        bmr_cal = summary.get("bmrKilocalories")
+        bmr_cal = bmr_cal if bmr_cal is not None else 0
         active_cal = max(0, int(total_cal - bmr_cal)) if total_cal and bmr_cal else 0
 
-    dist_km = round(summary.get("totalDistanceMeters", 0) / 1000.0, 2)
+    total_dist = summary.get("totalDistanceMeters")
+    total_dist = total_dist if total_dist is not None else 0.0
+    dist_km = round(total_dist / 1000.0, 2)
 
     # Body Battery (not available on all devices, e.g. FR 935)
     bb_max = summary.get("bodyBatteryHighestValue")

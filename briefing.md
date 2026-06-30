@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 🔋 Briefing Diário — 29/06/2026
 
 **Recuperação:** 🟡
@@ -14,3 +15,15 @@ Você apresenta uma gestão de carga de treino excepcional, no ponto ideal para 
 
 **Ação do Dia:** 🎯
 Considerando a ótima gestão de carga e o potencial de performance, para o seu próximo treino de qualidade, sugiro uma sessão de ciclismo de 75-90 minutos. Inclua um aquecimento de 15 minutos em Z2, seguido por 2-3 blocos de 15 minutos em Zona de Sweet Spot (88-94% do FTP, ~157-167W), com 5 minutos de recuperação ativa em Z1-Z2 entre os blocos, e 10 minutos de desaquecimento. Objetivo: Desenvolver a resistência de força e elevar o limiar de potência no ciclismo.
+=======
+### 🔋 Briefing Diário - 29/06/2026
+
+**Recuperação:** 🟡 Sua boa duração de sono e FC de repouso estável são positivas, mas o baixo sono profundo (21 min) indica uma recuperação moderada para o dia.
+
+**Carga:** 🟢 Com um ACWR de 0.96, sua carga de treino está perfeitamente equilibrada e otimizada para o desempenho contínuo e prevenção de lesões.
+
+**Performance:** 🟡 Seu VO2Max combinado de 42.9 é satisfatório para sua idade (39 anos), mostrando um bom nível, mas com um excelente potencial para evoluir ainda mais.
+
+**Ação do Dia:**
+🎯 **Recuperação Ativa**: Priorize uma rodagem ou pedal leve de 30-40 minutos em Zona 1/2 para promover a circulação e otimizar sua recuperação, preparando-se para os próximos desafios!
+>>>>>>> df640ee618c76f9f7fc6bec4f94943e6d63a2158

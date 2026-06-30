@@ -167,35 +167,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         
         .activities-header h2 {{
             font-size: 1.5rem;
+            color: #f8fafc;
         }}
 
-        .filters {{
-            display: flex;
-            gap: 0.5rem;
-        }}
 
-        .filter-btn {{
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #94a3b8;
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.85rem;
-            transition: all 0.2s ease;
-        }}
-
-        .filter-btn:hover {{
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-        }}
-
-        .filter-btn.active {{
-            background: #3b82f6;
-            color: #fff;
-            border-color: #3b82f6;
-        }}
 
         /* Table */
         .table-container {{
@@ -311,12 +286,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     <div class="glass-panel">
         <div class="activities-header">
-            <h2>Histórico de Atividades</h2>
-            <div class="filters">
-                <button class="filter-btn active" data-filter="all">Todos</button>
-                <button class="filter-btn" data-filter="7">Últimos 7 Dias</button>
-                <button class="filter-btn" data-filter="30">Últimos 30 Dias</button>
-            </div>
+            <h2 style="color: #f8fafc;">Histórico de Atividades</h2>
         </div>
         
         <div class="table-container">
@@ -346,50 +316,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     const rawBriefing = {briefing_json};
     const activities = {activities_json};
     
-    // Filter rows in browser
-    function filterTable(daysFilter) {{
-        const rows = document.querySelectorAll('.activity-row');
-        let count = 0;
-        
-        rows.forEach(row => {{
-            if (daysFilter === 'all') {{
-                row.style.display = '';
-                count++;
-            }} else {{
-                const daysAgo = parseInt(row.getAttribute('data-days-ago') || '999');
-                if (daysAgo <= parseInt(daysFilter)) {{
-                    row.style.display = '';
-                    count++;
-                }} else {{
-                    row.style.display = 'none';
-                }}
-            }}
-        }});
-        
-        // Handle empty states dynamically
-        let emptyStateRow = document.getElementById('empty-state-row');
-        if (count === 0) {{
-            if (!emptyStateRow) {{
-                emptyStateRow = document.createElement('tr');
-                emptyStateRow.id = 'empty-state-row';
-                emptyStateRow.innerHTML = '<td colspan="8" class="no-data" style="text-align: center; padding: 2rem; color: #94a3b8;">Nenhuma atividade neste período.</td>';
-                document.getElementById('activities-body').appendChild(emptyStateRow);
-            }} else {{
-                emptyStateRow.style.display = '';
-            }}
-        }} else if (emptyStateRow) {{
-            emptyStateRow.style.display = 'none';
-        }}
-    }}
-    
-    // Filter Event Listeners
-    document.querySelectorAll('.filter-btn').forEach(btn => {{
-        btn.addEventListener('click', (e) => {{
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            filterTable(e.target.dataset.filter);
-        }});
-    }});
+
 </script>
 
 </body>
@@ -606,13 +533,13 @@ def generate_activities_html(activities):
             
         rows.append(f"""
         <tr class="activity-row" data-days-ago="{days_ago}">
-            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{formatted_date}</td>
-            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{translated_sport}</td>
-            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{name}</td>
-            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{duration}</td>
-            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{hr}</td>
-            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{trimp_str}</td>
-            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{vo2_str}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1;">{formatted_date}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1;">{translated_sport}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1;">{name}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1;">{duration}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1;">{hr}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1;">{trimp_str}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1;">{vo2_str}</td>
             <td style="padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">{source_badge}</td>
         </tr>
         """)
@@ -850,35 +777,35 @@ def main():
         race_preds_html = f"""
         <div class="glass-panel" style="background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; margin-bottom: 24px;">
             <div style="margin-bottom: 16px;">
-                <h2 style="font-size: 1.5rem; font-weight: 600;">Previsões de Prova</h2>
+                <h2 style="color: #f8fafc; font-size: 1.5rem; font-weight: 600;">Previsões de Prova</h2>
             </div>
             <table class="responsive-table" cellpadding="0" cellspacing="0" style="width: 100%; border: none;">
                 <tr>
                     <td valign="top" style="width: 23%; padding-right: 2%; border: none;">
                         <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
                             <h3 style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase;">5K</h3>
-                            <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_5k}</div>
+                            <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_5k}</div>
                             <div class="pace-badge" style="display: inline-block; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; color: #cbd5e1;">🏃 Pace: {pace_5k}/km</div>
                         </div>
                     </td>
                     <td valign="top" style="width: 23%; padding-right: 2%; border: none;">
                         <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
                             <h3 style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase;">10K</h3>
-                            <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_10k}</div>
+                            <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_10k}</div>
                             <div class="pace-badge" style="display: inline-block; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; color: #cbd5e1;">🏃 Pace: {pace_10k}/km</div>
                         </div>
                     </td>
                     <td valign="top" style="width: 23%; padding-right: 2%; border: none;">
                         <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
                             <h3 style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase;">Meia Maratona</h3>
-                            <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_half}</div>
+                            <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_half}</div>
                             <div class="pace-badge" style="display: inline-block; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; color: #cbd5e1;">🏃 Pace: {pace_half}/km</div>
                         </div>
                     </td>
                     <td valign="top" style="width: 23%; border: none;">
                         <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
                             <h3 style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase;">Maratona</h3>
-                            <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_mara}</div>
+                            <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">{pred_mara}</div>
                             <div class="pace-badge" style="display: inline-block; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; color: #cbd5e1;">🏃 Pace: {pace_mara}/km</div>
                         </div>
                     </td>
