@@ -437,14 +437,7 @@ def main():
         import time
         import random
         
-        max_attempts = 8
-        base_delay = 5.0
-        factor = 2.0
-        max_delay = 120.0
-        max_total_time = 900.0  # 15 minutes limit
-        
-        start_time = time.time()
-        attempt = 0
+        models_to_try = ["gemini-3.5-flash", "gemini-2.5-flash"]
         success = False
         
         try:
@@ -457,54 +450,72 @@ def main():
         if client:
             prompt = get_briefing_prompt(data)
             
-            while attempt < max_attempts:
-                attempt += 1
-                
-                # Check overall time budget
-                elapsed = time.time() - start_time
-                if elapsed >= max_total_time:
-                    print(f"Time limit of 15 minutes exceeded ({elapsed:.1f}s elapsed). Falling back to deterministic analysis...", file=sys.stderr)
+            for model_name in models_to_try:
+                if success:
                     break
+                    
+                print(f"Trying model: {model_name}...", file=sys.stderr)
+                start_time = time.time()
+                attempt = 0
+                max_attempts = 8
+                base_delay = 5.0
+                factor = 2.0
+                max_delay = 120.0
+                max_total_time = 900.0  # 15 minutes limit per model
                 
-                try:
-                    # Use gemini-2.5-flash as the default fast and capable model
-                    response = client.models.generate_content(
-                        model="gemini-2.5-flash",
-                        contents=prompt,
-                    )
-                    final_text = response.text
-                    success = True
-                    break
-                except errors.APIError as err:
-                    # Do not retry on client configuration/permission errors
-                    if err.code in (400, 401, 403, 404):
-                        print(f"Gemini API Client Error (non-retryable): {err}. Falling back to deterministic analysis...", file=sys.stderr)
+                while attempt < max_attempts:
+                    attempt += 1
+                    
+                    # Check overall time budget for this model
+                    elapsed = time.time() - start_time
+                    if elapsed >= max_total_time:
+                        print(f"Time limit of 15 minutes exceeded for model {model_name} ({elapsed:.1f}s elapsed).", file=sys.stderr)
                         break
                     
-                    print(f"[Attempt {attempt}/{max_attempts}] Gemini API Error: {err}.", file=sys.stderr)
-                except KeyboardInterrupt:
-                    print("\nOperation cancelled by user.", file=sys.stderr)
-                    sys.exit(1)
-                except Exception as err:
-                    print(f"[Attempt {attempt}/{max_attempts}] Unexpected error running interpretation: {err}.", file=sys.stderr)
-                
-                if attempt < max_attempts:
-                    # Calculate delay with exponential backoff + jitter
-                    delay = min(base_delay * (factor ** (attempt - 1)), max_delay)
-                    jitter = random.uniform(0.1, 1.0)
-                    total_delay = delay + jitter
-                    
-                    remaining_time = max_total_time - (time.time() - start_time)
-                    if remaining_time <= 0:
-                        print("Time limit of 15 minutes reached during backoff. Falling back...", file=sys.stderr)
+                    try:
+                        response = client.models.generate_content(
+                            model=model_name,
+                            contents=prompt,
+                        )
+                        final_text = response.text
+                        success = True
                         break
+                    except errors.APIError as err:
+                        # Do not retry on client configuration/permission errors
+                        if err.code in (400, 401, 403, 404):
+                            print(f"Gemini API Client Error (non-retryable) on model {model_name}: {err}.", file=sys.stderr)
+                            break
+                        
+                        print(f"[Attempt {attempt}/{max_attempts}] Gemini API Error on model {model_name}: {err}.", file=sys.stderr)
+                    except KeyboardInterrupt:
+                        print("\nOperation cancelled by user.", file=sys.stderr)
+                        sys.exit(1)
+                    except Exception as err:
+                        print(f"[Attempt {attempt}/{max_attempts}] Unexpected error on model {model_name}: {err}.", file=sys.stderr)
                     
-                    sleep_time = min(total_delay, remaining_time)
-                    print(f"Retrying in {sleep_time:.2f} seconds...", file=sys.stderr)
-                    time.sleep(sleep_time)
+                    if attempt < max_attempts:
+                        # Calculate delay with exponential backoff + jitter
+                        delay = min(base_delay * (factor ** (attempt - 1)), max_delay)
+                        jitter = random.uniform(0.1, 1.0)
+                        total_delay = delay + jitter
+                        
+                        remaining_time = max_total_time - (time.time() - start_time)
+                        if remaining_time <= 0:
+                            print(f"Time limit of 15 minutes reached for model {model_name} during backoff.", file=sys.stderr)
+                            break
+                        
+                        sleep_time = min(total_delay, remaining_time)
+                        print(f"Retrying model {model_name} in {sleep_time:.2f} seconds...", file=sys.stderr)
+                        time.sleep(sleep_time)
+                
+                if success:
+                    print(f"Successfully generated briefing using model {model_name}!", file=sys.stderr)
+                    break
+                else:
+                    print(f"Model {model_name} failed all attempts or timed out.", file=sys.stderr)
             
             if not success:
-                print("All retry attempts failed or timed out. Falling back to deterministic analysis...", file=sys.stderr)
+                print("All models and retry attempts failed. Falling back to deterministic analysis...", file=sys.stderr)
                 final_text = generate_local_fallback(data)
             
     # Save to file
