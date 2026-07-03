@@ -434,23 +434,78 @@ def main():
         final_text = generate_local_fallback(data)
     else:
         # Call Gemini API using google-genai
+        import time
+        import random
+        
+        max_attempts = 8
+        base_delay = 5.0
+        factor = 2.0
+        max_delay = 120.0
+        max_total_time = 900.0  # 15 minutes limit
+        
+        start_time = time.time()
+        attempt = 0
+        success = False
+        
         try:
             client = genai.Client(api_key=api_key)
+        except Exception as e:
+            print(f"Error initializing Gemini client: {e}. Falling back to deterministic analysis...", file=sys.stderr)
+            final_text = generate_local_fallback(data)
+            client = None
+            
+        if client:
             prompt = get_briefing_prompt(data)
             
-            # Use gemini-2.5-flash as the default fast and capable model
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-            )
-            final_text = response.text
+            while attempt < max_attempts:
+                attempt += 1
+                
+                # Check overall time budget
+                elapsed = time.time() - start_time
+                if elapsed >= max_total_time:
+                    print(f"Time limit of 15 minutes exceeded ({elapsed:.1f}s elapsed). Falling back to deterministic analysis...", file=sys.stderr)
+                    break
+                
+                try:
+                    # Use gemini-2.5-flash as the default fast and capable model
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=prompt,
+                    )
+                    final_text = response.text
+                    success = True
+                    break
+                except errors.APIError as err:
+                    # Do not retry on client configuration/permission errors
+                    if err.code in (400, 401, 403, 404):
+                        print(f"Gemini API Client Error (non-retryable): {err}. Falling back to deterministic analysis...", file=sys.stderr)
+                        break
+                    
+                    print(f"[Attempt {attempt}/{max_attempts}] Gemini API Error: {err}.", file=sys.stderr)
+                except KeyboardInterrupt:
+                    print("\nOperation cancelled by user.", file=sys.stderr)
+                    sys.exit(1)
+                except Exception as err:
+                    print(f"[Attempt {attempt}/{max_attempts}] Unexpected error running interpretation: {err}.", file=sys.stderr)
+                
+                if attempt < max_attempts:
+                    # Calculate delay with exponential backoff + jitter
+                    delay = min(base_delay * (factor ** (attempt - 1)), max_delay)
+                    jitter = random.uniform(0.1, 1.0)
+                    total_delay = delay + jitter
+                    
+                    remaining_time = max_total_time - (time.time() - start_time)
+                    if remaining_time <= 0:
+                        print("Time limit of 15 minutes reached during backoff. Falling back...", file=sys.stderr)
+                        break
+                    
+                    sleep_time = min(total_delay, remaining_time)
+                    print(f"Retrying in {sleep_time:.2f} seconds...", file=sys.stderr)
+                    time.sleep(sleep_time)
             
-        except errors.APIError as err:
-            print(f"Gemini API Error: {err}. Falling back to deterministic analysis...", file=sys.stderr)
-            final_text = generate_local_fallback(data)
-        except Exception as err:
-            print(f"Unexpected error running interpretation: {err}. Falling back to deterministic analysis...", file=sys.stderr)
-            final_text = generate_local_fallback(data)
+            if not success:
+                print("All retry attempts failed or timed out. Falling back to deterministic analysis...", file=sys.stderr)
+                final_text = generate_local_fallback(data)
             
     # Save to file
     with open("briefing.md", "w", encoding="utf-8") as f:
