@@ -286,8 +286,8 @@ def extract_training_status(api, target_date):
             2: "RECOVERY",
             3: "MAINTAINING", 
             4: "MAINTAINING",      # Validado no site da garmin connect
-            5: "PEAKING",
-            6: "OVERREACHING",
+            5: "OVERREACHING",
+            6: "PEAKING",          # Validado no site da garmin connect
             7: "PRODUCTIVE",       # Validado no site da garmin connect
             8: "UNPRODUCTIVE",
             9: "STRAINED",
