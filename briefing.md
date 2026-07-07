@@ -1,22 +1,16 @@
-🔋 Briefing Diário — 05/07/2026
+🔋 Briefing Diário — 06/07/2026
 
 **Recuperação:** 🟢 Verde
-Excelente recuperação marcada por um sono de 09h05, com um tempo espetacular de sono profundo (02h01), garantindo ampla restauração física e neurológica. Embora o HRV não esteja disponível no seu dispositivo atual, sua frequência cardíaca de repouso (54 bpm) está muito próxima da sua média semanal de 52 bpm, indicando estabilidade do sistema nervoso autônomo. O seu corpo está perfeitamente recuperado e pronto para absorver estímulos de alto rendimento hoje.
+Mesmo sem dados de HRV e prontidão, a análise do seu sono revela uma excelente capacidade regenerativa, totalizando 09h22m de descanso com uma fase REM muito robusta (02h14m). A sua frequência cardíaca de repouso registrou excepcionais 33 bpm (bem abaixo da média de 7 dias de 49 bpm), o que indica uma forte dominância parassimpática e prontidão fisiológica para absorver carga. O estresse diário controlado (média de 30) confirma que o seu organismo iniciou o dia em perfeito estado de recuperação.
 
-**Carga:** 🟡 Amarelo
-Seu ACWR combinado de 0,64 indica que a carga de treino aguda está abaixo do seu histórico crônico, situando você em uma zona de destreino leve ou "tapering". No entanto, seu status de treino atual é classificado como **PEAKING** (Polimento), o que significa que essa redução intencional de volume dissipou a fadiga acumulada da última semana. A tendência das últimas atividades mostra estímulos curtos e controlados, configurando uma janela perfeita de supercompensação.
+**Carga:** 🟢 Verde
+O seu ACWR combinado está em excelentes 1,07, posicionando você exatamente no centro da "zona de segurança" e máximo ganho de performance (0,8 a 1,3). A relação entre carga aguda (EWMA 58,0) e crônica (EWMA 54,2) mostra uma progressão linear, segura e livre de picos de estresse músculo-esquelético. O histórico recente aponta para uma consistência impecável entre corrida, ciclismo indoor no MyWhoosh e força, consolidando uma excelente janela de adaptação fisiológica.
 
 **Performance:** 🟡 Amarelo
-Seu VO2 Máx combinado estimado é de 43.1, o que o classifica como **Satisfatório** para sua faixa etária de 39 anos, com boa margem para evolução. Vale destacar que seu VO2 Máx específico de corrida (44.1) já entra na faixa classificada como **Bom**, refletindo o impacto positivo dos estímulos intervalados recentes na sua eficiência cardiovascular.
+O seu VO2Max estimado combinado de 43,1 coloca você na classificação "Satisfatório" para a sua faixa etária (39 anos), estando muito próximo do limite para subir ao nível "Bom" (≥44,0). O seu potencial de corrida atual (VO2Max de 43,7) se mostra ligeiramente superior ao do ciclismo (42,6), indicando uma ótima eficiência biomecânica na corrida que deve ser usada como alavanca de evolução.
 
 **Análise Integrada:** 🔍
-Você se encontra no cenário clássico e ideal de "Polimento" (Peaking): sua recuperação biológica está no ápice devido ao sono de excelente qualidade, enquanto a carga de treino acumulada caiu estrategicamente (ACWR 0,64), eliminando qualquer fadiga residual. O seu sistema neuromuscular e cardiovascular está totalmente limpo e pronto para produzir potência e velocidade, tornando o dia de hoje ideal para um estímulo de alta intensidade e qualidade.
+Recuperação 🟢 + Carga 🟢 + Performance 🟡. Você está em um estado fisiológico altamente favorável, onde a alta capacidade de recuperação permitiu assimilar perfeitamente o forte treino de corrida de hoje (59 min com FC média de 160 bpm). O seu sistema cardiovascular respondeu muito bem ao estímulo, e a carga acumulada está perfeitamente equilibrada, criando o cenário ideal para consolidar essa transição de nível de condicionamento.
 
 **Ação do Dia:** 🎯
-**Sessão de Intervalos de VO2 Máx na Corrida (Pista ou Esteira)**
-- **Duração Total:** 45 minutos.
-- **Estrutura:**
-  - 10 min de aquecimento progressivo em Z2 (ritmo confortável).
-  - **Parte Principal:** 5 tiros de 3 minutos em Z4 alta/Z5 (ritmo alvo de 5k entre 04:35 e 04:45 min/km ou FC acima de 170 bpm), com 2 minutos de caminhada ou trote bem leve para recuperação ativa entre os tiros.
-  - 10 min de desaquecimento leve em Z1.
-- **Objetivo Fisiológico:** Aproveitar a ausência de fadiga para recrutar fibras de contração rápida, expandir o teto aeróbico (VO2 Máx) e consolidar as adaptações de velocidade sem sobrecarregar o sistema musculoesquelético devido ao baixo volume total.
+**Protocolo de consolidação e regeneração ativa pós-esforço:** Após a forte sessão de corrida de hoje (59 min em Z3/Z4), realize 15 a 20 minutos de mobilidade articular focada em flexores de quadril, panturrilhas e cadeia posterior, seguida de ingestão imediata de proteína + carboidrato de rápida absorção. O objetivo é acelerar a ressíntese de glicogênio e o reparo tecidual, garantindo que o estímulo de hoje se transforme em ganho real de VO2Max para amanhã.

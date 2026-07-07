@@ -283,10 +283,10 @@ def extract_training_status(api, target_date):
         ts_labels = {
             0: "NOT_APPLICABLE",
             1: "DETRAINING",
-            2: "RECOVERY",
+            2: "OVERREACHING",
             3: "MAINTAINING", 
             4: "MAINTAINING",      # Validado no site da garmin connect
-            5: "OVERREACHING",
+            5: "RECOVERY",         # Validado no site da garmin connect
             6: "PEAKING",          # Validado no site da garmin connect
             7: "PRODUCTIVE",       # Validado no site da garmin connect
             8: "UNPRODUCTIVE",
