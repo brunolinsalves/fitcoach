@@ -342,38 +342,69 @@ def deduplicate_activities(garmin_acts: list[dict], strava_acts: list[dict]) -> 
     Merge Garmin and Strava activities, removing duplicates.
     An activity is considered duplicate if start times are within DEDUP_TOLERANCE_SECS
     and the sport type is similar.
+    For duplicate cycling activities (normalized sport 'ride'), we keep the Strava activity.
+    For other duplicate activities, we keep the Garmin activity.
     """
-    # Index Garmin activities by (normalized_sport, rounded_timestamp)
-    garmin_index = set()
-    for act in garmin_acts:
-        t = parse_activity_time(act)
-        sport = normalize_sport(act.get("sport_type") or act.get("activityType", {}).get("typeKey", ""))
-        if t:
-            # Round to nearest 5 min for matching
-            rounded = int(t.timestamp()) // DEDUP_TOLERANCE_SECS
-            garmin_index.add((sport, rounded))
-            # Also add adjacent windows to catch near-misses
-            garmin_index.add((sport, rounded - 1))
-            garmin_index.add((sport, rounded + 1))
+    merged = []
+    
+    # Index Strava activities by normalized sport
+    strava_by_sport = {}
+    for s_act in strava_acts:
+        sport = normalize_sport(s_act.get("sport_type") or s_act.get("type") or "")
+        strava_by_sport.setdefault(sport, []).append(s_act)
+        
+    used_strava_ids = set()
+    skipped_garmin_ids = set()
+    
+    def get_act_id(act, default_prefix):
+        return act.get("id") or act.get("activityId") or f"{default_prefix}_{parse_activity_time(act)}"
 
-    # Filter Strava activities, keeping only those NOT in Garmin
-    merged = list(garmin_acts)  # Start with all Garmin activities
+    for g_act in garmin_acts:
+        g_time = parse_activity_time(g_act)
+        if not g_time:
+            merged.append(g_act)
+            continue
+            
+        g_sport = normalize_sport(g_act.get("sport_type") or g_act.get("activityType", {}).get("typeKey", ""))
+        
+        # Check if there is a matching Strava activity
+        matched_s_act = None
+        for s_act in strava_by_sport.get(g_sport, []):
+            s_time = parse_activity_time(s_act)
+            if s_time and abs(g_time.timestamp() - s_time.timestamp()) <= DEDUP_TOLERANCE_SECS:
+                matched_s_act = s_act
+                break
+                
+        if matched_s_act:
+            s_id = get_act_id(matched_s_act, "strava")
+            g_id = get_act_id(g_act, "garmin")
+            if g_sport == "ride":
+                # Duplicate cycling: keep Strava, discard Garmin
+                skipped_garmin_ids.add(g_id)
+                used_strava_ids.add(s_id)
+                merged.append(matched_s_act)
+            else:
+                # Other duplicate: keep Garmin, discard Strava
+                used_strava_ids.add(s_id)
+                merged.append(g_act)
+        else:
+            merged.append(g_act)
+            
+    # Now add all Strava activities that were NOT duplicates/used
     strava_added = 0
     strava_skipped = 0
-
-    for act in strava_acts:
-        t = parse_activity_time(act)
-        sport = normalize_sport(act.get("sport_type") or act.get("type") or "")
-        if t:
-            rounded = int(t.timestamp()) // DEDUP_TOLERANCE_SECS
-            if (sport, rounded) in garmin_index:
+    for s_act in strava_acts:
+        s_id = get_act_id(s_act, "strava")
+        if s_id in used_strava_ids:
+            if normalize_sport(s_act.get("sport_type") or s_act.get("type") or "") != "ride":
                 strava_skipped += 1
-                continue
-        merged.append(act)
+            continue
+        merged.append(s_act)
         strava_added += 1
 
+    total_removed = len(skipped_garmin_ids) + strava_skipped
     print(f"  Deduplication: {len(garmin_acts)} Garmin + {len(strava_acts)} Strava "
-          f"→ {strava_added} Strava added, {strava_skipped} duplicates removed "
+          f"→ {strava_added} Strava added, {total_removed} duplicates removed "
           f"→ {len(merged)} total")
     return merged
 
