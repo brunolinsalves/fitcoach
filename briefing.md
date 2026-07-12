@@ -1,16 +1,16 @@
-🔋 Briefing Diário — 06/07/2026
+🔋 Briefing Diário — 11/07/2026
 
-**Recuperação:** 🟢 Verde
-Mesmo sem dados de HRV e prontidão, a análise do seu sono revela uma excelente capacidade regenerativa, totalizando 09h22m de descanso com uma fase REM muito robusta (02h14m). A sua frequência cardíaca de repouso registrou excepcionais 33 bpm (bem abaixo da média de 7 dias de 49 bpm), o que indica uma forte dominância parassimpática e prontidão fisiológica para absorver carga. O estresse diário controlado (média de 30) confirma que o seu organismo iniciou o dia em perfeito estado de recuperação.
+**Recuperação:** 🟡 Amarelo
+Apesar da ausência de dados de HRV e Training Readiness, o seu sono foi excelente em duração (10h30), apresentando ótimo suporte de sono profundo (1h45) e REM (2h09). Contudo, a frequência cardíaca de repouso (FCR) acordou ligeiramente elevada em relação à sua média de 7 dias (52 bpm vs. 50 bpm). Isso indica que, embora o repouso passivo tenha sido longo, o seu sistema nervoso autônomo ainda está sob leve estresse para recuperar o desgaste acumulado.
 
 **Carga:** 🟢 Verde
-O seu ACWR combinado está em excelentes 1,07, posicionando você exatamente no centro da "zona de segurança" e máximo ganho de performance (0,8 a 1,3). A relação entre carga aguda (EWMA 58,0) e crônica (EWMA 54,2) mostra uma progressão linear, segura e livre de picos de estresse músculo-esquelético. O histórico recente aponta para uma consistência impecável entre corrida, ciclismo indoor no MyWhoosh e força, consolidando uma excelente janela de adaptação fisiológica.
+O seu ACWR_combined está em 0.85, posicionando-o perfeitamente dentro da "zona de ouro" de adaptação (0.8 a 1.3), o que indica que o seu volume de treino está crescendo de forma segura e estruturada. No entanto, o status "Overreaching" do Garmin serve como um alerta importante de que a densidade recente de treinos intensos (com corridas frequentes com médias de 155, 157 e 160 bpm) está cobrando o seu preço. O volume acumulado é seguro, mas a intensidade sequencial precisa ser controlada para evitar que o cansaço agudo vire fadiga crônica.
 
 **Performance:** 🟡 Amarelo
-O seu VO2Max estimado combinado de 43,1 coloca você na classificação "Satisfatório" para a sua faixa etária (39 anos), estando muito próximo do limite para subir ao nível "Bom" (≥44,0). O seu potencial de corrida atual (VO2Max de 43,7) se mostra ligeiramente superior ao do ciclismo (42,6), indicando uma ótima eficiência biomecânica na corrida que deve ser usada como alavanca de evolução.
+O seu VO2Max estimado combinado é de 42.7, o que o situa na classificação **Satisfatório** para a sua faixa etária (39 anos). Você está no caminho certo e bem posicionado para migrar em breve para a zona de classificação "Bom" (a partir de 44.0), desde que consiga absorver adequadamente os estímulos atuais.
 
 **Análise Integrada:** 🔍
-Recuperação 🟢 + Carga 🟢 + Performance 🟡. Você está em um estado fisiológico altamente favorável, onde a alta capacidade de recuperação permitiu assimilar perfeitamente o forte treino de corrida de hoje (59 min com FC média de 160 bpm). O seu sistema cardiovascular respondeu muito bem ao estímulo, e a carga acumulada está perfeitamente equilibrada, criando o cenário ideal para consolidar essa transição de nível de condicionamento.
+Recuperação 🟡 + Carga 🟢 + Performance 🟡 → Você construiu uma base de carga sólida e muito segura (ACWR em 0.85), mas a alta frequência de treinos de corrida com batimentos elevados levou o seu corpo ao limite de absorção (overreaching). Para que todo esse esforço se converta em ganho real de VO2Max, precisamos reduzir a intensidade imediatamente; insistir em treinos fortes hoje apenas sabotará suas adaptações fisiológicas.
 
 **Ação do Dia:** 🎯
-**Protocolo de consolidação e regeneração ativa pós-esforço:** Após a forte sessão de corrida de hoje (59 min em Z3/Z4), realize 15 a 20 minutos de mobilidade articular focada em flexores de quadril, panturrilhas e cadeia posterior, seguida de ingestão imediata de proteína + carboidrato de rápida absorção. O objetivo é acelerar a ressíntese de glicogênio e o reparo tecidual, garantindo que o estímulo de hoje se transforme em ganho real de VO2Max para amanhã.
+**Giro regenerativo de 45 minutos em Z1 no ciclismo indoor** (manter a frequência cardíaca estritamente abaixo de 125 bpm e potência abaixo de 115W, sem picos). O objetivo fisiológico é promover recuperação ativa através do aumento do fluxo sanguíneo nos membros inferiores e remoção de subprodutos metabólicos, mantendo o sistema cardiovascular relaxado para permitir que sua FCR retorne ao basal amanhã.

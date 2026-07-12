@@ -283,13 +283,13 @@ def extract_training_status(api, target_date):
         ts_labels = {
             0: "NOT_APPLICABLE",
             1: "DETRAINING",
-            2: "OVERREACHING",
+            2: "UNPRODUCTIVE",     # Validado no site da garmin connect
             3: "MAINTAINING", 
             4: "MAINTAINING",      # Validado no site da garmin connect
             5: "RECOVERY",         # Validado no site da garmin connect
             6: "PEAKING",          # Validado no site da garmin connect
             7: "PRODUCTIVE",       # Validado no site da garmin connect
-            8: "UNPRODUCTIVE",
+            8: "OVERREACHING",
             9: "STRAINED",
         }
         result["trainingStatus"] = ts_labels.get(ts_code, f"UNKNOWN({ts_code})")
