@@ -563,8 +563,38 @@ def get_color_class(val: float, type_metric: str) -> str:
     return ""
 
 def main():
-    json_path = "garmin_data.json"
-    briefing_path = "briefing.md"
+    import argparse
+    from pathlib import Path
+    project_dir = Path(__file__).parent.resolve()
+    
+    parser = argparse.ArgumentParser(description="Generate HTML Dashboard.")
+    parser.add_argument(
+        "--garmin-data",
+        type=str,
+        default="garmin_data.json",
+        help="Path to the Garmin JSON data file"
+    )
+    parser.add_argument(
+        "--briefing",
+        type=str,
+        default="briefing.md",
+        help="Path to the Briefing Markdown file"
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="dashboard.html",
+        help="Path to output HTML file"
+    )
+    args = parser.parse_args()
+    
+    json_path = args.garmin_data
+    if not os.path.isabs(json_path):
+        json_path = os.path.abspath(project_dir / json_path)
+        
+    briefing_path = args.briefing
+    if not os.path.isabs(briefing_path):
+        briefing_path = os.path.abspath(project_dir / briefing_path)
     
     # Read Data
     data = {}
@@ -586,6 +616,8 @@ def main():
     # Fallback to strava_tokens.json
     if not sex:
         strava_tokens_path = "strava_tokens.json"
+        if not os.path.isabs(strava_tokens_path):
+            strava_tokens_path = os.path.abspath(project_dir / strava_tokens_path)
         if os.path.exists(strava_tokens_path):
             try:
                 with open(strava_tokens_path, "r", encoding="utf-8") as sf:
@@ -850,11 +882,14 @@ def main():
         race_predictions_html=race_preds_html
     )
     
-    out_file = "dashboard.html"
+    out_file = args.output
+    if not os.path.isabs(out_file):
+        out_file = os.path.abspath(project_dir / out_file)
+        
     with open(out_file, "w", encoding="utf-8") as f:
         f.write(html)
         
-    print(f"  Dashboard gerado com sucesso em {os.path.abspath(out_file)}")
+    print(f"  Dashboard gerado com sucesso em {out_file}")
 
 if __name__ == "__main__":
     main()

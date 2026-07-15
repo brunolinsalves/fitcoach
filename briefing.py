@@ -167,7 +167,10 @@ def main():
     venv_python = project_dir / ".venv" / "bin" / "python3"
     python_exe = str(venv_python) if venv_python.exists() else sys.executable
 
-    output_path = os.path.abspath(args.output)
+    if not os.path.isabs(args.output):
+        output_path = os.path.abspath(project_dir / args.output)
+    else:
+        output_path = os.path.abspath(args.output)
     strava_path = os.path.join(project_dir, "strava_activities.json")
     
     if not args.cached:
@@ -217,7 +220,12 @@ def main():
     run_step("[Layer 2] Generating daily briefing...", interpret_cmd, project_dir)
 
     # Step 5: Generate Dashboard
-    dashboard_cmd = [python_exe, str(project_dir / "generate_dashboard.py")]
+    dashboard_cmd = [
+        python_exe, str(project_dir / "generate_dashboard.py"),
+        "--garmin-data", output_path,
+        "--briefing", str(project_dir / "briefing.md"),
+        "--output", str(project_dir / "dashboard.html")
+    ]
     run_step("[Layer 3] Generating HTML Dashboard...", dashboard_cmd, project_dir)
     
     # Send email if configured

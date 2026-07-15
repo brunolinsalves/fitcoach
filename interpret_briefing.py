@@ -411,10 +411,16 @@ def generate_local_fallback(data):
     return final_text
 
 def main():
+    from pathlib import Path
+    project_dir = Path(__file__).parent.resolve()
+
     if len(sys.argv) < 2:
         input_file = "garmin_data.json"
     else:
         input_file = sys.argv[1]
+
+    if not os.path.isabs(input_file):
+        input_file = os.path.abspath(project_dir / input_file)
 
     if not os.path.exists(input_file):
         print(f"Error: Input file '{input_file}' not found.", file=sys.stderr)
@@ -457,7 +463,7 @@ def main():
                 print(f"Trying model: {model_name}...", file=sys.stderr)
                 start_time = time.time()
                 attempt = 0
-                max_attempts = 8
+                max_attempts = 3
                 base_delay = 5.0
                 factor = 2.0
                 max_delay = 120.0
@@ -519,7 +525,8 @@ def main():
                 final_text = generate_local_fallback(data)
             
     # Save to file
-    with open("briefing.md", "w", encoding="utf-8") as f:
+    briefing_out = project_dir / "briefing.md"
+    with open(briefing_out, "w", encoding="utf-8") as f:
         f.write(final_text)
 
     print(final_text)
