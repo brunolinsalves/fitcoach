@@ -103,6 +103,19 @@ def get_briefing_prompt(data):
         "20-29" if age < 20 else ("70-79" if age > 79 else f"{int(age // 10)}0-{int(age // 10)}9")
     )
     
+    ref_dt = None
+    day_of_week_str = ""
+    is_weekend = False
+    if raw_date:
+        try:
+            from datetime import date as dt_date
+            ref_dt = dt_date.fromisoformat(raw_date)
+            weekdays_pt = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+            day_of_week_str = weekdays_pt[ref_dt.weekday()]
+            is_weekend = ref_dt.weekday() >= 5
+        except Exception:
+            pass
+
     # Check for planned workouts in metrics or fetch live if missing
     planned_workouts = metrics.get("plannedWorkouts")
     if planned_workouts is None:
@@ -119,7 +132,7 @@ def get_briefing_prompt(data):
             pw_list.append(f"- Título: {pw.get('title')}\n  Origem: {pw.get('origin', 'RUNNA Plan')}\n  Modalidade: {pw.get('sport')}\n  Descrição/Detalhes: {pw.get('description')}")
         planned_info_text = "\n".join(pw_list)
     else:
-        planned_info_text = "Nenhum treino agendado no calendário para esta data."
+        planned_info_text = f"Nenhum treino de corrida agendado no calendário RUNNA para esta data ({day_of_week_str})."
 
     # Format the data into a readable text chunk for the model
     data_str = json.dumps(metrics, indent=2, ensure_ascii=False)
@@ -127,7 +140,7 @@ def get_briefing_prompt(data):
     prompt = f"""
 Você é um treinador de alto rendimento e cientista do esporte especialista em fisiologia da corrida e ciclismo.
 
-Analise os seguintes dados fisiológicos e de performance do atleta (Sexo: {sex_str}, Idade: {age} anos) para o dia {formatted_date} e gere um briefing detalhado, direto ao ponto e motivador.
+Analise os seguintes dados fisiológicos e de performance do atleta (Sexo: {sex_str}, Idade: {age} anos) para a data {formatted_date} ({day_of_week_str}) e gere um briefing detalhado, direto ao ponto e motivador.
 
 **Sobre os dados:**
 - Os dados incluem métricas fisiológicas, atividades recentes e treinos planejados no calendário (RUNNA / Garmin).
@@ -139,7 +152,7 @@ Dados fisiológicos e de treinos em formato JSON:
 {data_str}
 ```
 
-**TREINO(S) AGENDADO(S) NO CALENDÁRIO PARA HOJE ({formatted_date}):**
+**TREINO(S) AGENDADO(S) NO CALENDÁRIO PARA HOJE ({formatted_date} - {day_of_week_str}):**
 {planned_info_text}
 
 ---
@@ -202,12 +215,19 @@ Use "estimated_vo2max_combined" se disponível; caso contrário, use o VO2Max di
 ### 5. 🎯 Ação do Dia
 Com base na análise integrada e no **Calendário do Atleta (RUNNA/Garmin)**, prescreva **uma ação específica e acionável**.
 
-**REGRA DE OURO PARA A PRESCRIÇÃO DA AÇÃO DO DIA:**
-1. **Prioridade Absoluta ao Plano RUNNA/Garmin:** Se houver um treino agendado no calendário para hoje (ex: treino do RUNNA), a recomendação principal da "Ação do Dia" **DEVE SER a realização desse treino agendado**, fornecendo orientações precisas de execução (distância, ritmo target, zonas de FC e estratégia).
-2. **Adaptação & Complementação Conforme a Fisiologia:**
-   - **Recuperação Boa/Moderada (🟢/🟡):** Prescreva expressamente a execução do treino agendado do RUNNA. Caso a recuperação do atleta esteja excelente (🟢), você pode sugerir um complemento leve em outro momento do dia (ex: 10–15 min de mobilidade, core ou educativos), mas **NUNCA substitua o treino do RUNNA por um treino principal de corrida/ciclismo totalmente diferente ou conflitante**.
-   - **Recuperação Ruim / Alta Fadiga (🔴) ou ACWR > 1.5:** Prescreva a **adaptação/redução consciente** do treino do RUNNA (ex: "O plano RUNNA prevê 6,5km leve, porém devido à alta fadiga e HRV desequilibrado, reduza para 3–4km em Z1 ou substitua por caminhada/descanso passivo").
-3. **NUNCA crie um treino principal de corrida/ciclismo conflitante com o RUNNA** (ex: prescrever tiros intervalados Z5 se o plano RUNNA marca uma corrida leve regenerativa Z2), a menos que seja para *reduzir* a carga em função de fadiga crônica.
+**REGRAS DE OURO PARA A PRESCRIÇÃO DA AÇÃO DO DIA:**
+
+1. **SE HOUVER TREINO AGENDADO NO RUNNA/GARMIN HOJE:**
+   - A recomendação principal **DEVE SER a realização do treino agendado no RUNNA**, fornecendo orientações precisas de execução (distância, ritmo target, zonas de FC e estratégia).
+   - Se a recuperação for Boa/Moderada (🟢/🟡): Recomende a execução do treino do RUNNA. Se a recuperação for excelente (🟢), você pode sugerir um complemento leve em outro horário (ex: 10–15 min de mobilidade/core).
+   - Se a recuperação for Ruim (🔴) ou ACWR > 1.5: Prescreva a **adaptação/redução consciente** do treino do RUNNA (ex: reduzir distância ou ritmo para Z1).
+
+2. **SE NÃO HOUVER TREINO AGENDADO NO RUNNA/GARMIN HOJE:**
+   - **É ESTRITAMENTE PROIBIDO RECOMENDAR CORRIDA:** O atleta segue a planilha de corrida do RUNNA estritamente. Se não há corrida agendada no RUNNA hoje, não prescreva corrida.
+   - **PRESCREVA CROSS-TRAINING (CICLISMO OU NATAÇÃO):** Se a recuperação for boa ou moderada (🟢/🟡), **recomende um treino de Ciclismo (Cycling) ou Natação (Swimming)**. O atleta QUER treinar nesses dias sem corrida.
+   - **PREFERÊNCIA POR CICLISMO NOS FINAIS DE SEMANA ({day_of_week_str}):** Nos finais de semana (Sábado e Domingo), **priorize o Ciclismo** (pois a natação no condomínio é mais complexa no fim de semana).
+   - **SUGESTÃO DE WORKOUT DO MYWHOOSH PARA CICLISMO:** Sempre que recomendar Ciclismo (especialmente indoor), **indique explicitamente um treino/workout específico do MyWhoosh** (consultando treinos em https://mywhooshinfo.com/workouts/, como ex: "MyWhoosh Zone 2 / Endurance - 45 a 60 min", "MyWhoosh Sweet Spot - 3x8 min", "MyWhoosh Tempo 45min", "MyWhoosh VO2Max 5min Max Aerobic", "MyWhoosh Cadence Builder", etc., ajustando duração e intensidade à fisiologia de hoje).
+   - **DESCANSO TOTAL APENAS QUANDO ESTRITAMENTE NECESSÁRIO:** Só prescreva descanso passivo total se a fisiologia exigir **estritamente** (ex: Recuperação 🔴 Vermelha, HRV muito desequilibrado ou risco severo de overreaching ACWR > 1.5). Caso a recuperação seja 🟢 Verde ou 🟡 Amarela, **RECOMENDE TREINO DE CICLISMO (MYWHOOSH) OU NATAÇÃO!**
 
 ---
 
@@ -228,7 +248,7 @@ Com base na análise integrada e no **Calendário do Atleta (RUNNA/Garmin)**, pr
 [2–3 frases cruzando as três dimensões e explicando a lógica da recomendação]
 
 **Ação do Dia:** 🎯
-[Prescrição específica priorizando o treino do RUNNA agendado para hoje, com ritmo, zonas, distância e eventual sugestão complementar se apropriado]
+[Prescrição específica: se houver treino RUNNA, detalhe a execução do RUNNA. Se NÃO houver treino RUNNA, recomende Ciclismo (com workout do MyWhoosh) ou Natação, reservando Descanso Total apenas se a recuperação for 🔴 Vermelha.]
 """
     return prompt
 
@@ -247,13 +267,11 @@ def generate_local_fallback(data):
     sleep_duration = sleep.get("durationSeconds")
     resting_hr = summary.get("restingHeartRate")
     resting_hr_7d = summary.get("restingHeartRate7dAvg")
-    hrv_status = hrv.get("status")  # BALANCED, UNBALANCED, or None
     
     rec_val = "🟡"
     rec_desc = "Sem dados suficientes para avaliação completa."
     
     if readiness_score is not None and sleep_score is not None:
-        # Full data path (newer devices)
         avg_rec = (readiness_score + sleep_score) / 2
         if avg_rec >= 75:
             rec_val = "🟢"
@@ -265,22 +283,19 @@ def generate_local_fallback(data):
             rec_val = "🔴"
             rec_desc = f"Recuperação baixa. Prontidão: {readiness_score}/100, Sono: {sleep_score}/100."
     elif sleep_duration:
-        # Fallback: use sleep duration + resting HR (older devices like FR 935)
         sleep_hours = sleep_duration / 3600.0
         sleep_fmt = sleep.get("durationFormatted", f"{sleep_hours:.1f}h")
-        deep_secs = sleep.get("deepSleepSeconds") or 0
-        deep_min = deep_secs // 60
         
         hr_delta = None
         if resting_hr and resting_hr_7d and resting_hr_7d > 0:
-            hr_delta = resting_hr - resting_hr_7d  # positive = elevated = worse recovery
+            hr_delta = resting_hr - resting_hr_7d
         
         if sleep_hours >= 7.5 and (hr_delta is None or hr_delta <= 3):
             rec_val = "🟢"
-            rec_desc = f"Boa recuperação. Sono: {sleep_fmt} ({deep_min}min profundo)."
+            rec_desc = f"Boa recuperação. Sono: {sleep_fmt}."
         elif sleep_hours >= 6.0:
             rec_val = "🟡"
-            rec_desc = f"Recuperação moderada. Sono: {sleep_fmt} ({deep_min}min profundo)."
+            rec_desc = f"Recuperação moderada. Sono: {sleep_fmt}."
         else:
             rec_val = "🔴"
             rec_desc = f"Sono curto ({sleep_fmt}). Recuperação comprometida."
@@ -294,13 +309,11 @@ def generate_local_fallback(data):
             rec_desc += f" FC repouso levemente elevada ({resting_hr} vs {resting_hr_7d})."
     
     # --- LOAD ---
-    # Prefer combined ACWR (Garmin + Strava merged) over Garmin-only
     acwr = status.get("acwr_combined") or status.get("acwr") or status.get("acwr_estimated")
     weekly_load = status.get("weeklyLoadTrimp_combined") or status.get("weeklyTrainingLoad")
     load_tunnel_min = status.get("loadTunnelMin")
     load_tunnel_max = status.get("loadTunnelMax")
     training_label = status.get("trainingStatus")
-    strava_cycling = status.get("stravaCyclingIncluded", False)
     
     load_val = "🟡"
     load_desc = "Carga indeterminada."
@@ -316,7 +329,6 @@ def generate_local_fallback(data):
             load_val = "🔴"
             load_desc = f"Carga em zona de risco! ACWR: {acwr:.2f}."
     elif weekly_load and load_tunnel_min and load_tunnel_max:
-        # Fallback: compare weekly load to load tunnel
         if load_tunnel_min <= weekly_load <= load_tunnel_max:
             load_val = "🟢"
             load_desc = f"Carga semanal dentro do túnel ideal ({weekly_load} / {load_tunnel_min}-{load_tunnel_max})."
@@ -327,76 +339,29 @@ def generate_local_fallback(data):
             load_val = "🔴"
             load_desc = f"Carga semanal acima do túnel ({weekly_load} > {load_tunnel_max})."
     
-    if training_label and training_label not in ("status",):
-        load_desc += f" Status: {training_label}."
-    if strava_cycling:
-        load_desc += " (inclui ciclismo Strava)"
-            
     # --- PERFORMANCE ---
     metadata = data.get("metadata", {})
     raw_date = metadata.get("date", "")
     vo2max = status.get("estimated_vo2max_combined") or status.get("vo2Max")
-    fitness_age = status.get("estimated_fitness_age_combined") or status.get("fitnessAge")
     perf_val = "🟡"
     perf_desc = f"VO2Max: {vo2max or 'n/a'}."
     
     if vo2max:
-        # Determine sex
         gender_raw = metadata.get("gender")
-        sex = None
-        if gender_raw == "MALE":
-            sex = "M"
-        elif gender_raw == "FEMALE":
-            sex = "F"
-            
-        if not sex:
-            strava_tokens_path = "strava_tokens.json"
-            if os.path.exists(strava_tokens_path):
-                try:
-                    with open(strava_tokens_path, "r", encoding="utf-8") as sf:
-                        strava_tokens = json.load(sf)
-                        athlete = strava_tokens.get("athlete", {})
-                        sex_raw = athlete.get("sex")
-                        if sex_raw in ("M", "F"):
-                            sex = sex_raw
-                except Exception:
-                    pass
-        if not sex:
-            sex = "M"
-            
-        # Determine age
-        birth_date_str = metadata.get("birthDate")
-        age = None
-        if birth_date_str:
+        sex = "M" if gender_raw == "MALE" else ("F" if gender_raw == "FEMALE" else "M")
+        age = 39
+        if metadata.get("birthDate"):
             try:
                 from datetime import date as dt_date
-                birth_date_obj = dt_date.fromisoformat(birth_date_str)
-                ref_date = dt_date.fromisoformat(raw_date) if raw_date else dt_date.today()
-                age = ref_date.year - birth_date_obj.year - ((ref_date.month, ref_date.day) < (birth_date_obj.month, birth_date_obj.day))
+                bdate = dt_date.fromisoformat(metadata.get("birthDate"))
+                rdate = dt_date.fromisoformat(raw_date) if raw_date else dt_date.today()
+                age = rdate.year - bdate.year - ((rdate.month, rdate.day) < (bdate.month, bdate.day))
             except Exception:
                 pass
-        if age is None:
-            fitness_age_obj = metrics.get("fitnessAge", {})
-            if isinstance(fitness_age_obj, dict):
-                age = fitness_age_obj.get("chronologicalAge")
-        if age is None:
-            age = status.get("fitnessAge")
-        if age is None:
-            age = 39
             
         label, semaphor = classify_vo2max(float(vo2max), sex, age)
         perf_val = semaphor
-        
-        if status.get("estimated_vo2max_combined"):
-            perf_desc = f"Performance {label}. VO2Max Combinado: {vo2max}."
-        else:
-            perf_desc = f"Performance {label}. VO2Max: {vo2max}."
-            
-        if fitness_age:
-            if status.get("estimated_fitness_age_combined"):
-                perf_desc += f" Idade fitness recalculada: {fitness_age}."
-            else:
-                perf_desc += f" Idade fitness: {fitness_age}."
+        perf_desc = f"Performance {label}. VO2Max: {vo2max}."
 
     # --- ACTION ---
     planned_workouts = metrics.get("plannedWorkouts")
@@ -407,8 +372,8 @@ def generate_local_fallback(data):
         except Exception:
             planned_workouts = []
 
-    action = "Treino Moderado Aeróbico"
-    reason = "Equilíbrio geral de prontidão e carga."
+    action = "Ciclismo Indoor MyWhoosh (Zone 2 Endurance)"
+    reason = "Sem treino RUNNA agendado. Treino aeróbico de ciclismo sem impacto nas articulações."
     
     if planned_workouts:
         pw = planned_workouts[0]
@@ -424,18 +389,25 @@ def generate_local_fallback(data):
             action = f"Executar Treino do {origin}: {title}"
             reason = f"Realize o treino agendado no seu plano. {first_line}"
     else:
-        if rec_val == "🔴":
+        # No RUNNA workout scheduled for today
+        if rec_val == "🔴" or load_val == "🔴":
             action = "Descanso Total / Recovery Ativo Leve"
-            reason = "Fisiologia indica alta fadiga. Priorize recuperação."
-        elif load_val == "🔴":
-            action = "Redução de Volume / Corrida Regenerativa"
-            reason = "Carga fora da zona de segurança."
-        elif rec_val == "🟢" and load_val == "🟢":
-            action = "Treino de Alta Intensidade ou Intervalado"
-            reason = "Janela de oportunidade fisiológica aberta para estímulo forte."
-        elif rec_val == "🟢" and load_val == "🟡":
-            action = "Treino de Volume (Longão/Z2)"
-            reason = "Boa recuperação, carga precisa de atenção — volume aeróbio é ideal."
+            reason = "Sem treino RUNNA hoje e sua fisiologia indica alta fadiga/sobrecarga (estritamente necessário descansar)."
+        else:
+            is_weekend_day = False
+            if raw_date:
+                try:
+                    from datetime import date as dt_date
+                    is_weekend_day = dt_date.fromisoformat(raw_date).weekday() >= 5
+                except Exception:
+                    pass
+            
+            if is_weekend_day or rec_val == "🟢":
+                action = "Ciclismo Indoor MyWhoosh (Sessão Endurance Z2 / Sweetspot)"
+                reason = "Sem treino RUNNA hoje. Aproveite a boa recuperação para treinar ciclismo no MyWhoosh (ex: MyWhoosh Zone 2 Endurance 45-60 min ou Sweetspot)."
+            else:
+                action = "Natação ou Ciclismo Indoor (MyWhoosh)"
+                reason = "Sem treino RUNNA hoje. Mantenha o condicionamento aeróbico com natação ou treino de ciclismo no MyWhoosh."
 
     raw_date = data.get("metadata", {}).get("date", "")
     formatted_date = raw_date
