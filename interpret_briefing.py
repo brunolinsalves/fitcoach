@@ -103,6 +103,24 @@ def get_briefing_prompt(data):
         "20-29" if age < 20 else ("70-79" if age > 79 else f"{int(age // 10)}0-{int(age // 10)}9")
     )
     
+    # Check for planned workouts in metrics or fetch live if missing
+    planned_workouts = metrics.get("plannedWorkouts")
+    if planned_workouts is None:
+        try:
+            from garmin_calendar import fetch_planned_workouts_for_date
+            planned_workouts = fetch_planned_workouts_for_date(raw_date)
+        except Exception:
+            planned_workouts = []
+
+    planned_info_text = ""
+    if planned_workouts:
+        pw_list = []
+        for pw in planned_workouts:
+            pw_list.append(f"- Título: {pw.get('title')}\n  Origem: {pw.get('origin', 'RUNNA Plan')}\n  Modalidade: {pw.get('sport')}\n  Descrição/Detalhes: {pw.get('description')}")
+        planned_info_text = "\n".join(pw_list)
+    else:
+        planned_info_text = "Nenhum treino agendado no calendário para esta data."
+
     # Format the data into a readable text chunk for the model
     data_str = json.dumps(metrics, indent=2, ensure_ascii=False)
     
@@ -112,14 +130,17 @@ Você é um treinador de alto rendimento e cientista do esporte especialista em 
 Analise os seguintes dados fisiológicos e de performance do atleta (Sexo: {sex_str}, Idade: {age} anos) para o dia {formatted_date} e gere um briefing detalhado, direto ao ponto e motivador.
 
 **Sobre os dados:**
-- Os dados podem incluir atividades de ciclismo indoor (MyWhoosh/Strava) e corrida (Garmin).
+- Os dados incluem métricas fisiológicas, atividades recentes e treinos planejados no calendário (RUNNA / Garmin).
 - Campos com sufixo "_combined" representam métricas recalculadas considerando TODAS as atividades. **Sempre prefira esses valores quando disponíveis.**
 - O campo "recentActivities" lista as atividades da última semana com o TRIMP calculado de cada uma — use para identificar padrão de carga e tendência.
 
-Dados fisiológicos em formato JSON:
+Dados fisiológicos e de treinos em formato JSON:
 ```json
 {data_str}
 ```
+
+**TREINO(S) AGENDADO(S) NO CALENDÁRIO PARA HOJE ({formatted_date}):**
+{planned_info_text}
 
 ---
 
@@ -174,23 +195,19 @@ Use "estimated_vo2max_combined" se disponível; caso contrário, use o VO2Max di
 ---
 
 ### 4. 🔍 Análise Integrada
-**Esta seção é obrigatória.** Cruze as três dimensões acima e identifique o padrão dominante do atleta hoje. Exemplos de raciocínio esperado:
-- Recuperação 🔴 + Carga 🔴 + Performance 🟢 → "Você está produzindo resultados, mas o sistema está no limite. Risco real de overreaching se não houver recuo agora."
-- Recuperação 🟢 + Carga 🟡 + Performance 🟢 → "Janela favorável para um estímulo de qualidade hoje. A carga pode subir com segurança."
-- Recuperação 🟡 + Carga 🟢 + Performance 🟡 → "Momento de consistência. Treino moderado hoje consolida a base sem adicionar risco."
-
-Escreva 2–3 frases sintetizando o estado geral e a lógica do que recomendar.
+**Esta seção é obrigatória.** Cruze as três dimensões acima e identifique o padrão dominante do atleta hoje. Escreva 2–3 frases sintetizando o estado geral e a lógica da recomendação.
 
 ---
 
 ### 5. 🎯 Ação do Dia
-Com base na análise integrada, prescreva **uma ação específica e acionável**. Seja concreto: inclua intensidade (zona), duração estimada e objetivo fisiológico da sessão.
+Com base na análise integrada e no **Calendário do Atleta (RUNNA/Garmin)**, prescreva **uma ação específica e acionável**.
 
-**Exemplos de nível de detalhe esperado:**
-- ✅ "Rodagem regenerativa de 35–40 min em Z1 (abaixo de 130 bpm) para estimular recuperação ativa sem adicionar carga ao sistema nervoso central."
-- ✅ "Intervalado 6×4 min em Z4 (85–90% FCmax) com 3 min de recuperação ativa. Objetivo: estímulo de VO2Max aproveitando a boa prontidão de hoje."
-- ✅ "Descanso total ou mobilidade de 20 min. Seu sistema não está em condições de absorver treino produtivo hoje — recuperação passiva é a prescrição correta."
-- ❌ (evitar) "Faça um treino leve." — vago demais.
+**REGRA DE OURO PARA A PRESCRIÇÃO DA AÇÃO DO DIA:**
+1. **Prioridade Absoluta ao Plano RUNNA/Garmin:** Se houver um treino agendado no calendário para hoje (ex: treino do RUNNA), a recomendação principal da "Ação do Dia" **DEVE SER a realização desse treino agendado**, fornecendo orientações precisas de execução (distância, ritmo target, zonas de FC e estratégia).
+2. **Adaptação & Complementação Conforme a Fisiologia:**
+   - **Recuperação Boa/Moderada (🟢/🟡):** Prescreva expressamente a execução do treino agendado do RUNNA. Caso a recuperação do atleta esteja excelente (🟢), você pode sugerir um complemento leve em outro momento do dia (ex: 10–15 min de mobilidade, core ou educativos), mas **NUNCA substitua o treino do RUNNA por um treino principal de corrida/ciclismo totalmente diferente ou conflitante**.
+   - **Recuperação Ruim / Alta Fadiga (🔴) ou ACWR > 1.5:** Prescreva a **adaptação/redução consciente** do treino do RUNNA (ex: "O plano RUNNA prevê 6,5km leve, porém devido à alta fadiga e HRV desequilibrado, reduza para 3–4km em Z1 ou substitua por caminhada/descanso passivo").
+3. **NUNCA crie um treino principal de corrida/ciclismo conflitante com o RUNNA** (ex: prescrever tiros intervalados Z5 se o plano RUNNA marca uma corrida leve regenerativa Z2), a menos que seja para *reduzir* a carga em função de fadiga crônica.
 
 ---
 
@@ -211,7 +228,7 @@ Com base na análise integrada, prescreva **uma ação específica e acionável*
 [2–3 frases cruzando as três dimensões e explicando a lógica da recomendação]
 
 **Ação do Dia:** 🎯
-[Prescrição específica com zona de intensidade, duração e objetivo fisiológico]
+[Prescrição específica priorizando o treino do RUNNA agendado para hoje, com ritmo, zonas, distância e eventual sugestão complementar se apropriado]
 """
     return prompt
 
@@ -382,20 +399,43 @@ def generate_local_fallback(data):
                 perf_desc += f" Idade fitness: {fitness_age}."
 
     # --- ACTION ---
+    planned_workouts = metrics.get("plannedWorkouts")
+    if planned_workouts is None:
+        try:
+            from garmin_calendar import fetch_planned_workouts_for_date
+            planned_workouts = fetch_planned_workouts_for_date(raw_date)
+        except Exception:
+            planned_workouts = []
+
     action = "Treino Moderado Aeróbico"
     reason = "Equilíbrio geral de prontidão e carga."
-    if rec_val == "🔴":
-        action = "Descanso Total / Recovery Ativo Leve"
-        reason = "Fisiologia indica alta fadiga. Priorize recuperação."
-    elif load_val == "🔴":
-        action = "Redução de Volume / Corrida Regenerativa"
-        reason = "Carga fora da zona de segurança."
-    elif rec_val == "🟢" and load_val == "🟢":
-        action = "Treino de Alta Intensidade ou Intervalado"
-        reason = "Janela de oportunidade fisiológica aberta para estímulo forte."
-    elif rec_val == "🟢" and load_val == "🟡":
-        action = "Treino de Volume (Longão/Z2)"
-        reason = "Boa recuperação, carga precisa de atenção — volume aeróbio é ideal."
+    
+    if planned_workouts:
+        pw = planned_workouts[0]
+        title = pw.get("title", "Treino do Plano")
+        desc = (pw.get("description") or "").strip()
+        first_line = desc.splitlines()[0] if desc else title
+        origin = pw.get("origin", "Runna Plan")
+        
+        if rec_val == "🔴" or load_val == "🔴":
+            action = f"Ajustar/Reduzir Treino do {origin} ({title})"
+            reason = f"O plano prevê '{title}', porém seus dados fisiológicos (recuperação/carga) exigem cautela. Reduza o volume/intensidade ou troque por descanso."
+        else:
+            action = f"Executar Treino do {origin}: {title}"
+            reason = f"Realize o treino agendado no seu plano. {first_line}"
+    else:
+        if rec_val == "🔴":
+            action = "Descanso Total / Recovery Ativo Leve"
+            reason = "Fisiologia indica alta fadiga. Priorize recuperação."
+        elif load_val == "🔴":
+            action = "Redução de Volume / Corrida Regenerativa"
+            reason = "Carga fora da zona de segurança."
+        elif rec_val == "🟢" and load_val == "🟢":
+            action = "Treino de Alta Intensidade ou Intervalado"
+            reason = "Janela de oportunidade fisiológica aberta para estímulo forte."
+        elif rec_val == "🟢" and load_val == "🟡":
+            action = "Treino de Volume (Longão/Z2)"
+            reason = "Boa recuperação, carga precisa de atenção — volume aeróbio é ideal."
 
     raw_date = data.get("metadata", {}).get("date", "")
     formatted_date = raw_date

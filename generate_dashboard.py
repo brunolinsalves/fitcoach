@@ -242,6 +242,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <body>
 
 <div class="container">
+    {planned_workout_html}
     <div class="glass-panel hero-briefing" id="briefing-content">
         {briefing_html}
     </div>
@@ -853,12 +854,38 @@ def main():
         y, m, d = raw_date.split("-")
         header_date = f"{d}/{m}/{y}"
 
+    planned_workouts = metrics.get("plannedWorkouts")
+    if planned_workouts is None:
+        try:
+            from garmin_calendar import fetch_planned_workouts_for_date
+            planned_workouts = fetch_planned_workouts_for_date(raw_date)
+        except Exception:
+            planned_workouts = []
+
+    planned_workout_html = ""
+    if planned_workouts:
+        pw = planned_workouts[0]
+        title = pw.get("title", "Treino Agendado")
+        origin = pw.get("origin", "Runna Plan")
+        desc = (pw.get("description") or "").replace("\n", "<br>")
+        planned_workout_html = f"""
+        <div class="glass-panel" style="border-left: 4px solid #3b82f6; background: rgba(59, 130, 246, 0.08); margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h3 style="font-size: 0.85rem; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.05em;">📅 Treino Agendado no Plano ({origin})</h3>
+                <span style="background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.3);">{origin}</span>
+            </div>
+            <div style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin-bottom: 8px;">🏃 {title}</div>
+            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">{desc}</div>
+        </div>
+        """
+
     briefing_html = markdown_to_html(briefing_text)
     activities_html = generate_activities_html(activities)
 
     # Inject into HTML
     html = HTML_TEMPLATE.format(
         date=header_date,
+        planned_workout_html=planned_workout_html,
         acwr_val=f"{acwr_val:.2f}" if isinstance(acwr_val, float) else (acwr_val or "n/a"),
         acwr_gauge_html=acwr_gauge_html,
         vo2_gauge_html=vo2_gauge_html,

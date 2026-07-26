@@ -161,8 +161,8 @@ def fetch_workout_details(api: Garmin, workout_id: int):
         print(f"  Warning: Could not fetch details for workout {workout_id}: {e}", file=sys.stderr)
         return None
 
-def fetch_runna_workouts(url: str):
-    """Fetch and parse future workouts from the Runna iCal feed."""
+def fetch_runna_workouts(url: str, min_date: str = None):
+    """Fetch and parse workouts from the Runna iCal feed."""
     try:
         print("Fetching Runna workouts from iCal feed...")
         # Add User-Agent to avoid getting blocked by WAF/Firewall
@@ -183,7 +183,8 @@ def fetch_runna_workouts(url: str):
     
     events = []
     current_event = None
-    today_str = datetime.date.today().isoformat()
+    if min_date is None:
+        min_date = datetime.date.today().isoformat()
     
     for line in unfolded.splitlines():
         line = line.strip()
@@ -214,7 +215,7 @@ def fetch_runna_workouts(url: str):
         if len(dtstart) >= 8:
             date_str = f"{dtstart[0:4]}-{dtstart[4:6]}-{dtstart[6:8]}"
             
-        if date_str and date_str >= today_str:
+        if date_str and date_str >= min_date:
             # Infer sport type from title/description
             sport = "running"
             summary_lower = summary.lower()
@@ -296,6 +297,39 @@ def merge_workouts(garmin_workouts, runna_workouts):
         
     merged.sort(key=lambda x: x.get("date", ""))
     return merged
+
+def fetch_planned_workouts_for_date(target_date: str, api=None, runna_url=None):
+    """Fetch planned workouts for a specific target_date from Runna iCal and/or Garmin Connect."""
+    if not runna_url:
+        runna_url = os.getenv("RUNNA_CALENDAR_URL")
+        
+    runna_workouts = []
+    if runna_url:
+        runna_workouts = fetch_runna_workouts(runna_url, min_date=target_date)
+        
+    garmin_workouts = []
+    if api:
+        try:
+            garmin_workouts = fetch_future_workouts(api)
+        except Exception as e:
+            print(f"Warning: Could not fetch Garmin planned workouts: {e}", file=sys.stderr)
+            
+    combined = merge_workouts(garmin_workouts, runna_workouts)
+    
+    matching = []
+    for w in combined:
+        if w.get("date") == target_date:
+            matching.append({
+                "date": w.get("date"),
+                "title": w.get("title"),
+                "sport": w.get("sportTypeKey"),
+                "origin": "Runna Plan" if w.get("is_runna") else "Garmin Connect",
+                "distance": w.get("distance"),
+                "duration": w.get("duration"),
+                "description": w.get("description")
+            })
+    return matching
+
 
 def generate_markdown(api, workouts, display_name, has_runna_url):
     """Generate a clean, professional markdown content for garmin_calendar.md."""

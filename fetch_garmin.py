@@ -548,6 +548,15 @@ def main():
             gender = user_data.get('gender')
             birth_date = user_data.get('birthDate')
 
+    print("Fetching planned workouts (Runna & Garmin)...")
+    planned_workouts = []
+    try:
+        from garmin_calendar import fetch_planned_workouts_for_date
+        planned_workouts = fetch_planned_workouts_for_date(target_date, api=api)
+        print(f"Found {len(planned_workouts)} planned workout(s) for {target_date}.")
+    except Exception as err_pw:
+        print(f"Warning: Could not fetch planned workouts for date: {err_pw}", file=sys.stderr)
+
     # Compile all data into a structured deterministic document
     garmin_report = {
         "metadata": {
@@ -565,6 +574,7 @@ def main():
             "trainingStatus": training_status,
             "bodyComposition": weight_data,
             "racePredictions": race_predictions,
+            "plannedWorkouts": planned_workouts,
         }
     }
 
