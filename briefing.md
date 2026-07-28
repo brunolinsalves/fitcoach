@@ -1,22 +1,16 @@
-🔋 Briefing Diário — 26/07/2026
+🔋 Briefing Diário — 28/07/2026
 
-**Recuperação:** 🟢 Verde
-Excelente recuperação fisiológica marcada por quase 8 horas de sono de boa qualidade e uma frequência cardíaca de repouso (FCR) de 48 bpm, significativamente abaixo da sua média de 7 dias (50 bpm). O nível de estresse médio extremamente baixo (9) sinaliza forte dominância parassimpática e regeneração eficiente do sistema nervoso autônomo. Você está totalmente restaurado e pronto para o esforço.
+**Recuperação:** 🟢
+Você teve uma noite de sono excepcional com 9h10m de duração e baixo estresse médio (18), o que indica uma excelente capacidade de recuperação. Sua frequência cardíaca de repouso está ligeiramente abaixo da média semanal, um ótimo sinal de que seu corpo está pronto para responder ao treino.
 
-**Carga:** 🟢 Verde
-O seu ACWR combinado de 0.94 está perfeitamente calibrado no "sweet spot" metabólico (faixa ideal de 0.8 a 1.3), refletindo um excelente controle de riscos. A tendência da última semana mostra uma carga muito consistente e bem distribuída entre corrida e ciclismo virtual, o que afasta qualquer risco de overreaching e consolida suas adaptações musculares e cardiovasculares.
+**Carga:** 🟡
+Seu ACWR combinado está em 0.79, o que o posiciona na faixa de destreino leve e mantém seu status de treino como "UNPRODUCTIVE". Isso significa que sua carga aguda (41.4) está aquém da carga crônica (52.5), indicando que o estímulo tem sido insuficiente para impulsionar novas adaptações nos últimos dias. Há uma clara oportunidade para aumentar o volume e/ou a intensidade.
 
-**Performance:** 🟡 Amarelo
-Seu VO2Max combinado estimado é de 43.9, posicionando-o no limite superior da categoria "Satisfatório" (40.5–44.0) para sua faixa etária, a apenas 0.1 de evoluir para o nível "Bom". A sua projeção de corrida isolada (VO2Max de 45.2) já atinge a classificação "Bom", confirmando que seus tempos de prova estimados (como os 5k para 23:12) são extremamente competitivos e realistas para seu nível atual.
+**Performance:** 🟡
+Seu VO2Max combinado atual é de 43.9, classificando-o como "Satisfatório" para sua idade, mas já na borda superior dessa categoria, bem próximo de atingir a faixa "Bom". Com uma tendência de fitness estável/em melhora, há um grande potencial para cruzar para a próxima categoria e ver ganhos significativos.
 
 **Análise Integrada:** 🔍
-O cruzamento de uma recuperação excelente (FCR baixa e sono de 07h56) com uma carga em perfeito equilíbrio (ACWR 0.94) coloca seu corpo em uma janela ideal de supercompensação. Como não há treino de corrida planejado no RUNNA para hoje, a estratégia perfeita é usar um estímulo aeróbico de baixo impacto na bike para impulsionar a circulação, otimizar a capilarização muscular e acelerar a remoção de metabólitos sem estresse articular.
+Com sua recuperação em estado de prontidão máxima e uma carga de treino que pede por mais estímulo, você está em uma posição privilegiada para forçar adaptações. Seu corpo está descansado e seu status "UNPRODUCTIVE" aponta para a necessidade de um impulso. Este é o momento ideal para aplicar um treino que desafie seu sistema e promova o avanço do seu VO2Max.
 
 **Ação do Dia:** 🎯
-**Treino Prescrito: Ciclismo de Base Aeróbica (Cross-Training)**
-Como o domingo está livre de corrida no RUNNA, aproveitaremos seu estado físico impecável para um trabalho de endurance na bike, preservando suas articulações.
-
-*   **Plataforma / Treino:** Acesse o **MyWhoosh** e selecione o treino **"MyWhoosh Zone 2 / Endurance - 60 min"** (ou realize um pedal livre focado em endurance na mesma duração).
-*   **Zona de Esforço:** Mantenha a intensidade estritamente em Zona 2. Foco em potência ao redor de **120W a 135W** (baseado no seu FTP de 178W) e FC controlada abaixo de 135 bpm.
-*   **Cadência:** Mantenha um giro fluido entre 85 e 95 rpm.
-*   **Foco Mental:** Este é um treino regenerativo e construtor de base mitocondrial. Não force o ritmo. Aproveite para girar fácil e preparar o corpo para abrir a próxima semana de corrida com força total!
+Hoje é terça-feira e não há treino de corrida agendado no RUNNA, o que significa uma excelente oportunidade para focar no ciclismo e aumentar sua carga de treino de forma inteligente. Com sua recuperação em alta e o objetivo de sair do status "UNPRODUCTIVE", vamos dar um estímulo significativo. Acesse a categoria **Threshold** no MyWhoosh e selecione o workout **Over-Under 3x12min (LOAD previsto: ~68)**. Este treino desafiará seu limiar de potência e será fundamental para elevar sua capacidade de desempenho!

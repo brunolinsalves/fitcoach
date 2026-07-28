@@ -134,6 +134,15 @@ def get_briefing_prompt(data):
     else:
         planned_info_text = f"Nenhum treino de corrida agendado no calendário RUNNA para esta data ({day_of_week_str})."
 
+    cycling_ftp = 178
+    try:
+        cycling_ftp = int(os.getenv("CYCLING_FTP", "178"))
+    except Exception:
+        pass
+    ts_params = metrics.get("trainingStatus", {}).get("loadCalculationParams", {})
+    if ts_params and ts_params.get("cyclingFTP"):
+        cycling_ftp = ts_params.get("cyclingFTP")
+
     # Format the data into a readable text chunk for the model
     data_str = json.dumps(metrics, indent=2, ensure_ascii=False)
     
@@ -146,6 +155,7 @@ Analise os seguintes dados fisiológicos e de performance do atleta (Sexo: {sex_
 - Os dados incluem métricas fisiológicas, atividades recentes e treinos planejados no calendário (RUNNA / Garmin).
 - Campos com sufixo "_combined" representam métricas recalculadas considerando TODAS as atividades. **Sempre prefira esses valores quando disponíveis.**
 - O campo "recentActivities" lista as atividades da última semana com o TRIMP calculado de cada uma — use para identificar padrão de carga e tendência.
+- O FTP de Ciclismo do atleta configurado no sistema é **{cycling_ftp}W**.
 
 Dados fisiológicos e de treinos em formato JSON:
 ```json
@@ -226,8 +236,24 @@ Com base na análise integrada e no **Calendário do Atleta (RUNNA/Garmin)**, pr
    - **É ESTRITAMENTE PROIBIDO RECOMENDAR CORRIDA:** O atleta segue a planilha de corrida do RUNNA estritamente. Se não há corrida agendada no RUNNA hoje, não prescreva corrida.
    - **PRESCREVA CROSS-TRAINING (CICLISMO OU NATAÇÃO):** Se a recuperação for boa ou moderada (🟢/🟡), **recomende um treino de Ciclismo (Cycling) ou Natação (Swimming)**. O atleta QUER treinar nesses dias sem corrida.
    - **PREFERÊNCIA POR CICLISMO NOS FINAIS DE SEMANA ({day_of_week_str}):** Nos finais de semana (Sábado e Domingo), **priorize o Ciclismo** (pois a natação no condomínio é mais complexa no fim de semana).
-   - **SUGESTÃO DE WORKOUT DO MYWHOOSH PARA CICLISMO:** Sempre que recomendar Ciclismo (especialmente indoor), **indique explicitamente um treino/workout específico do MyWhoosh** (consultando treinos em https://mywhooshinfo.com/workouts/, como ex: "MyWhoosh Zone 2 / Endurance - 45 a 60 min", "MyWhoosh Sweet Spot - 3x8 min", "MyWhoosh Tempo 45min", "MyWhoosh VO2Max 5min Max Aerobic", "MyWhoosh Cadence Builder", etc., ajustando duração e intensidade à fisiologia de hoje).
-   - **DESCANSO TOTAL APENAS QUANDO ESTRITAMENTE NECESSÁRIO:** Só prescreva descanso passivo total se a fisiologia exigir **estritamente** (ex: Recuperação 🔴 Vermelha, HRV muito desequilibrado ou risco severo de overreaching ACWR > 1.5). Caso a recuperação seja 🟢 Verde ou 🟡 Amarela, **RECOMENDE TREINO DE CICLISMO (MYWHOOSH) OU NATAÇÃO!**
+   - **SELEÇÃO DA INTENSIDADE E CATÁLOGO OFICIAL DO APP MYWHOOSH:**
+     - **Recuperação 🟢 VERDE + Carga 🟡 (Destreino/UNPRODUCTIVE) ou 🟢 VERDE:** O atleta está super recuperado e a carga precisa subir/evoluir. **PRESCREVA UM TREINO DE MAIOR INTENSIDADE DA LISTA OFICIAL DO MYWHOOSH!**
+       - Na Categoria/Pasta *Sweetspot*: **`Sweet Spot 3x10min`** (LOAD previsto: ~62) ou **`Sweet Spot 2x15min`** (LOAD previsto: ~64) ou **`Sustained Sweetspot`** (LOAD previsto: ~68).
+       - Na Categoria/Pasta *VO2max*: **`VO2Max 5x3min`** (LOAD previsto: ~58) ou **`4x4min VO2Max`** (LOAD previsto: ~60).
+       - Na Categoria/Pasta *Tempo*: **`Tempo 3x10min`** (LOAD previsto: ~52) ou **`Tempo Progression`** (LOAD previsto: ~55).
+       - Na Categoria/Pasta *Threshold*: **`Threshold 2x15min`** (LOAD previsto: ~65) ou **`Over-Under 3x12min`** (LOAD previsto: ~68).
+       - **É ESTRITAMENTE PROIBIDO recomendar Zone 2 leve nestes dias e É PROIBIDO inventar nomes de treinos fictícios.** Sempre informe a Pasta (ex: Categoria *Sweetspot*) e o Nome Exato do Workout no MyWhoosh!
+     - **Recuperação 🟡 AMARELA ou Carga ALTA (ACWR > 1.3):** Prescreva um treino aeróbico leve/moderado no MyWhoosh da Categoria *Endurance*: **`Zone 2 Endurance 60min`** (LOAD previsto: ~49) ou **`Aerobic Base Builder 60min`** (LOAD previsto: ~52).
+     - **Recuperação 🔴 VERMELHA ou ACWR > 1.5:** Somente em caso de fadiga extrema/risco de lesão, prescreva Descanso Total ou mobilidade leve.
+   - **DESCANSO TOTAL APENAS QUANDO ESTRITAMENTE NECESSÁRIO:** Só prescreva descanso passivo se a fisiologia exigir **estritamente** (Recuperação 🔴). Caso a recuperação seja 🟢 ou 🟡, **RECOMENDE TREINO DE CICLISMO (MYWHOOSH) OU NATAÇÃO!**
+
+3. **INCLUSÃO OBRIGATÓRIA DA CATEGORIA/PASTA E NOME REAL DO WORKOUT COM LOAD PREVISTO:**
+   - Sempre que prescrever um treino de ciclismo no MyWhoosh, especifique a **Categoria/Pasta** e o **Nome Exato do Workout** como constam na biblioteca do app MyWhoosh!
+   - Inclua o **LOAD PREVISTO (TSS / TRIMP)** entre parênteses baseado no FTP de {cycling_ftp}W.
+   - Exemplo de formato exigido na Ação do Dia:
+     - `Acesse a categoria **Sweetspot** no MyWhoosh e selecione o workout **Sweet Spot 3x10min (LOAD previsto: ~62)**...`
+     - `Acesse a categoria **VO2max** no MyWhoosh e selecione o workout **VO2Max 5x3min (LOAD previsto: ~58)**...`
+     - `Acesse a categoria **Endurance** no MyWhoosh e selecione o workout **Zone 2 Endurance 60min (LOAD previsto: ~49)**...`
 
 ---
 
