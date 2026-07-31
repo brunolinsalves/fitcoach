@@ -517,6 +517,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Calculate combined training load and ACWR.")
     parser.add_argument("--garmin-data", type=str, default="garmin_data.json", help="Path to garmin_data.json")
     parser.add_argument("--strava-data", type=str, default="strava_activities.json", help="Path to strava_activities.json")
+    parser.add_argument("--health-connect-data", type=str, default="health_connect_data.json", help="Path to health_connect_data.json")
     parser.add_argument("--date", type=str, default=date.today().isoformat(), help="Target date for ACWR (YYYY-MM-DD)")
     parser.add_argument("--days", type=int, default=42, help="Days of history for ACWR calculation")
     return parser.parse_args()
@@ -635,6 +636,16 @@ def main():
     else:
         est_fitness_age_combined = None
 
+    # Load Health Connect Data
+    hc_data = None
+    if os.path.exists(args.health_connect_data):
+        try:
+            with open(args.health_connect_data, "r", encoding="utf-8") as f:
+                hc_data = json.load(f)
+            print(f"  Loaded Health Connect data from {args.health_connect_data}")
+        except Exception as e:
+            print(f"  Warning: Could not read Health Connect data: {e}", file=sys.stderr)
+
     # Enrich garmin_data.json
     if garmin_report:
         ts = garmin_report.get("metrics", {}).get("trainingStatus", {})
@@ -660,6 +671,44 @@ def main():
         }
         
         garmin_report["metrics"]["trainingStatus"] = ts
+
+        # Inject Health Connect metrics
+        if hc_data:
+            garmin_report["metrics"]["healthConnect"] = hc_data
+            cardio = hc_data.get("cardiovascular", {})
+            sleep_hc = hc_data.get("sleep", {})
+
+            # Set primary HRV from Health Connect (Amazfit Helio Strap) if available
+            if cardio.get("heartRateVariability"):
+                garmin_report["metrics"]["hrv"] = {
+                    "status": "BALANCED",
+                    "lastNightAvg": cardio.get("heartRateVariability"),
+                    "weeklyAvg": cardio.get("heartRateVariability"),
+                    "source": "Health Connect / Zepp (Amazfit Helio Strap)"
+                }
+
+            # Set primary Sleep from Health Connect (Amazfit Helio Strap) if available
+            if sleep_hc.get("durationFormatted"):
+                garmin_report["metrics"]["garminSleep"] = garmin_report["metrics"].get("sleep")
+                garmin_report["metrics"]["sleep"] = {
+                    "date": args.date,
+                    "durationFormatted": sleep_hc.get("durationFormatted"),
+                    "durationMinutes": sleep_hc.get("durationMinutes"),
+                    "durationSeconds": int(sleep_hc.get("durationMinutes", 0) * 60) if sleep_hc.get("durationMinutes") else None,
+                    "sleepSegmentFormatted": sleep_hc.get("sleepSegmentFormatted"),
+                    "sleepConfidence": sleep_hc.get("sleepConfidence"),
+                    "source": "Health Connect / Zepp (Amazfit Helio Strap)"
+                }
+
+            # Enrich Daily Summary (resting HR, SpO2, Respiratory rate)
+            daily_sum = garmin_report["metrics"].setdefault("dailySummary", {})
+            if cardio.get("restingHeartRate"):
+                daily_sum["restingHeartRateZepp"] = cardio.get("restingHeartRate")
+                daily_sum["restingHeartRate"] = cardio.get("restingHeartRate")
+            if cardio.get("oxygenSaturation"):
+                daily_sum["oxygenSaturation"] = cardio.get("oxygenSaturation")
+            if cardio.get("respiratoryRate"):
+                daily_sum["respiratoryRate"] = cardio.get("respiratoryRate")
         
         # Inject Race Predictions if missing or previously calculated
         race_preds = garmin_report["metrics"].get("racePredictions", {})
@@ -668,9 +717,9 @@ def main():
             if vo2_for_pred:
                 garmin_report["metrics"]["racePredictions"] = calculate_race_predictions_from_vo2(vo2_for_pred, penalty=RUNNING_ECONOMY_PENALTY)
         
-        with open(args.garmin_data, "w") as f:
+        with open(args.garmin_data, "w", encoding="utf-8") as f:
             json.dump(garmin_report, f, indent=2, ensure_ascii=False)
-        print(f"\n  Enriched {args.garmin_data} with combined training load data.")
+        print(f"\n  Enriched {args.garmin_data} with combined training load and Health Connect data.")
     else:
         print(f"\n  Warning: {args.garmin_data} not found. Skipping enrichment.", file=sys.stderr)
 

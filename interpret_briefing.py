@@ -170,17 +170,21 @@ Dados fisiológicos e de treinos em formato JSON:
 **INSTRUÇÕES DE ANÁLISE:**
 
 ### 1. 🔋 Recuperação
-Avalie com base em: Sleep Score, Sleep Quality, HRV Status, HRV Averages e Training Readiness.
+Avalie com base nos dados integrados (priorizando **Health Connect / Amazfit Helio Strap via Zepp**):
+- **Sono do Health Connect:** Duração de sono (ex: `durationFormatted` = 06:24:00, segmento = 05:36:00 do Amazfit Helio Strap). **É OBRIGATÓRIO citar os dados de sono do Health Connect / Zepp.**
+- **Variabilidade da Frequência Cardíaca (HRV):** OBRIGATÓRIO citar o HRV em ms do objeto `hrv` / `healthConnect.cardiovascular.heartRateVariability` (ex: 53 ms).
+- **Frequência Respiratória e SpO2:** Se disponíveis em `healthConnect.cardiovascular` (ex: 17 bpm e 99% SpO2).
+- **Frequência Cardíaca de Repouso (FC Repouso):** Citar o valor de FC de repouso (ex: 53 bpm).
 
 **Semáforo:**
-- 🟢 Verde: Excelente — HRV estável ou em alta, sono reparador, prontidão elevada.
-- 🟡 Amarelo: Moderada — HRV em queda leve, sono fragmentado ou prontidão intermediária.
-- 🔴 Vermelho: Precária — HRV desequilibrado, sono ruim ou prontidão muito baixa.
+- 🟢 Verde: Excelente — HRV estável/elevado (≥50 ms), SpO2 normal (97–100%), respiração estável (12–18 bpm), sono reparador (≥7h ou segmento restaurador).
+- 🟡 Amarelo: Moderada — HRV em queda leve ou intermediário, sono intermediário (5.5h–7h) ou FC repouso levemente elevada (+2–4 bpm).
+- 🔴 Vermelho: Precária — HRV desequilibrado/baixo (<40 ms), sono curto (<5.5h) ou FC repouso nitidamente elevada (+5+ bpm).
 
 **Detalhe esperado na saída (2–3 frases):**
-- Qualidade objetiva do sono (score e duração se disponível)
-- Estado do HRV: estável, em alta ou em queda, e o que isso indica fisiologicamente
-- Nível de prontidão e implicação prática para o treino de hoje
+- **Duração objetiva do sono do Health Connect / Zepp (mencionar os dados do Amazfit Helio Strap, ex: 6h24m)**
+- **Estado da Variabilidade da Frequência Cardíaca (HRV em ms) e FC de repouso (bpm)**
+- **Métricas adicionais (Frequência respiratória bpm / SpO2 %) e prontidão prática para o dia**
 
 ---
 
@@ -262,7 +266,7 @@ Com base na análise integrada e no **Calendário do Atleta (RUNNA/Garmin)**, pr
 🔋 Briefing Diário — {formatted_date}
 
 **Recuperação:** [🟢/🟡/🔴]
-[2–3 frases: sono + HRV + prontidão com interpretação]
+[2–3 frases: sono (duração/segmento) + HRV (ms) + FC repouso (bpm) + respiração (bpm)/SpO2 com interpretação fisiológica]
 
 **Carga:** [🟢/🟡/🔴]
 [2–3 frases: ACWR + tendência semanal + risco ou oportunidade]
@@ -286,53 +290,60 @@ def generate_local_fallback(data):
     hrv = metrics.get("hrv", {})
     readiness = metrics.get("trainingReadiness", {})
     status = metrics.get("trainingStatus", {})
+    hc = metrics.get("healthConnect", {})
+    hc_cardio = hc.get("cardiovascular", {})
+    hc_sleep = hc.get("sleep", {})
     
     # --- RECOVERY ---
     readiness_score = readiness.get("score")
     sleep_score = sleep.get("sleepScore")
     sleep_duration = sleep.get("durationSeconds")
-    resting_hr = summary.get("restingHeartRate")
+    
+    # Extrat metrics with Health Connect / Zepp fallback
+    hrv_val = hrv.get("lastNightAvg") or hc_cardio.get("heartRateVariability")
+    resp_rate = summary.get("respiratoryRate") or hc_cardio.get("respiratoryRate")
+    spo2_val = summary.get("oxygenSaturation") or hc_cardio.get("oxygenSaturation")
+    resting_hr = summary.get("restingHeartRate") or hc_cardio.get("restingHeartRate")
     resting_hr_7d = summary.get("restingHeartRate7dAvg")
     
-    rec_val = "🟡"
-    rec_desc = "Sem dados suficientes para avaliação completa."
+    sleep_fmt = sleep.get("durationFormatted") or sleep.get("healthConnectDurationFormatted") or hc_sleep.get("durationFormatted") or "n/a"
+    sleep_segment_fmt = sleep.get("healthConnectSegmentFormatted") or hc_sleep.get("sleepSegmentFormatted")
     
-    if readiness_score is not None and sleep_score is not None:
-        avg_rec = (readiness_score + sleep_score) / 2
-        if avg_rec >= 75:
-            rec_val = "🟢"
-            rec_desc = f"Recuperação excelente. Prontidão: {readiness_score}/100, Sono: {sleep_score}/100."
-        elif avg_rec >= 50:
+    rec_val = "🟡"
+    details_parts = []
+    
+    if sleep_fmt and sleep_fmt != "n/a":
+        details_parts.append(f"Sono: {sleep_fmt}" + (f" (segmento: {sleep_segment_fmt})" if sleep_segment_fmt else ""))
+    if hrv_val:
+        details_parts.append(f"HRV: {hrv_val} ms")
+    if resting_hr:
+        rhr_str = f"FC Repouso: {resting_hr} bpm"
+        if resting_hr_7d:
+            rhr_str += f" (média 7d: {resting_hr_7d} bpm)"
+        details_parts.append(rhr_str)
+    if resp_rate:
+        details_parts.append(f"Frequência Respiratória: {resp_rate} bpm")
+    if spo2_val:
+        details_parts.append(f"SpO2: {spo2_val}%")
+        
+    # Evaluate recovery state based on sleep, HRV and resting HR
+    hr_delta = (resting_hr - resting_hr_7d) if (resting_hr and resting_hr_7d) else None
+    
+    if (readiness_score and readiness_score >= 75) or (hrv_val and float(hrv_val) >= 50 and (hr_delta is None or hr_delta <= 2)):
+        rec_val = "🟢"
+    elif (readiness_score and readiness_score < 50) or (hr_delta is not None and hr_delta > 4):
+        rec_val = "🔴"
+    else:
+        rec_val = "🟡"
+        
+    rec_desc = " | ".join(details_parts) if details_parts else "Métricas de recuperação parciais."
+    if hr_delta is not None and hr_delta > 5:
+        rec_val = "🔴"
+        rec_desc += f" | FC repouso elevada ({resting_hr} vs média 7d: {resting_hr_7d})."
+    elif hr_delta is not None and hr_delta > 3:
+        if rec_val == "🟢":
             rec_val = "🟡"
-            rec_desc = f"Recuperação moderada. Prontidão: {readiness_score}/100, Sono: {sleep_score}/100."
-        else:
-            rec_val = "🔴"
-            rec_desc = f"Recuperação baixa. Prontidão: {readiness_score}/100, Sono: {sleep_score}/100."
-    elif sleep_duration:
-        sleep_hours = sleep_duration / 3600.0
-        sleep_fmt = sleep.get("durationFormatted", f"{sleep_hours:.1f}h")
-        
-        hr_delta = None
-        if resting_hr and resting_hr_7d and resting_hr_7d > 0:
-            hr_delta = resting_hr - resting_hr_7d
-        
-        if sleep_hours >= 7.5 and (hr_delta is None or hr_delta <= 3):
-            rec_val = "🟢"
-            rec_desc = f"Boa recuperação. Sono: {sleep_fmt}."
-        elif sleep_hours >= 6.0:
-            rec_val = "🟡"
-            rec_desc = f"Recuperação moderada. Sono: {sleep_fmt}."
-        else:
-            rec_val = "🔴"
-            rec_desc = f"Sono curto ({sleep_fmt}). Recuperação comprometida."
-        
-        if hr_delta is not None and hr_delta > 5:
-            rec_val = "🔴"
-            rec_desc += f" FC repouso elevada ({resting_hr} vs média 7d: {resting_hr_7d})."
-        elif hr_delta is not None and hr_delta > 3:
-            if rec_val == "🟢":
-                rec_val = "🟡"
-            rec_desc += f" FC repouso levemente elevada ({resting_hr} vs {resting_hr_7d})."
+        rec_desc += f" | FC repouso levemente elevada ({resting_hr} vs {resting_hr_7d})."
     
     # --- LOAD ---
     acwr = status.get("acwr_combined") or status.get("acwr") or status.get("acwr_estimated")

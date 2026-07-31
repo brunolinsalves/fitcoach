@@ -1,0 +1,221 @@
+{
+  "source": "Health Connect / Zepp (Amazfit Helio Strap)",
+  "fetchedAt": "2026-07-31T13:18:38.219284+00:00",
+  "cardiovascular": {
+    "heartRate": 58.0,
+    "restingHeartRate": 53.0,
+    "heartRateVariability": 53.0,
+    "oxygenSaturation": 99.0,
+    "respiratoryRate": 17.0
+  },
+  "sleep": {
+    "durationMinutes": 384.0,
+    "durationFormatted": "06:24:00",
+    "sleepConfidence": 50.0,
+    "sleepSegmentMs": 20160000.0,
+    "sleepSegmentFormatted": "05:36:00"
+  },
+  "activity": {
+    "steps": 1139.0,
+    "distanceMeters": 438.72012,
+    "elevationGainedMeters": 0.0,
+    "floors": 0.0,
+    "activeCalories": 399.0,
+    "totalCalories": 516.45,
+    "detectedActivity": "still"
+  },
+  "bodyComposition": {
+    "weightKg": 83.0,
+    "heightMeters": 1.82,
+    "basalMetabolicRate": 1739.5,
+    "bodyFatPercent": null,
+    "leanBodyMassGrams": null,
+    "bodyWaterMassGrams": null,
+    "boneMassGrams": null,
+    "vo2Max": null
+  },
+  "vitals": {
+    "bloodGlucose": null,
+    "diastolicBloodPressure": null,
+    "systolicBloodPressure": null,
+    "bodyTemperature": null,
+    "basalBodyTemperature": null,
+    "dailyHydration": 0.0
+  },
+  "rawSensors": {
+    "heartRate": {
+      "entityId": "sensor.s26_bruno_heart_rate",
+      "value": 58.0,
+      "unit": "bpm",
+      "lastUpdated": "2026-07-31T12:14:36.980848+00:00"
+    },
+    "restingHeartRate": {
+      "entityId": "sensor.s26_bruno_resting_heart_rate",
+      "value": 53.0,
+      "unit": "bpm",
+      "lastUpdated": "2026-07-31T10:58:03.515954+00:00"
+    },
+    "heartRateVariability": {
+      "entityId": "sensor.s26_bruno_heart_rate_variability",
+      "value": 53.0,
+      "unit": "ms",
+      "lastUpdated": "2026-07-31T10:58:03.512056+00:00"
+    },
+    "oxygenSaturation": {
+      "entityId": "sensor.s26_bruno_oxygen_saturation",
+      "value": 99.0,
+      "unit": "%",
+      "lastUpdated": "2026-07-31T10:58:03.514866+00:00"
+    },
+    "respiratoryRate": {
+      "entityId": "sensor.s26_bruno_respiratory_rate",
+      "value": 17.0,
+      "unit": "bpm",
+      "lastUpdated": "2026-07-31T10:58:03.515400+00:00"
+    },
+    "sleepDurationMinutes": {
+      "entityId": "sensor.s26_bruno_sleep_duration",
+      "value": 384.0,
+      "unit": "min",
+      "lastUpdated": "2026-07-31T10:58:03.516763+00:00"
+    },
+    "sleepConfidence": {
+      "entityId": "sensor.s26_bruno_sleep_confidence",
+      "value": 50.0,
+      "unit": "%",
+      "lastUpdated": "2026-07-31T13:01:56.756364+00:00"
+    },
+    "sleepSegmentMs": {
+      "entityId": "sensor.s26_bruno_sleep_segment",
+      "value": 20160000.0,
+      "unit": "ms",
+      "lastUpdated": "2026-07-31T10:58:03.493737+00:00"
+    },
+    "steps": {
+      "entityId": "sensor.s26_bruno_daily_steps",
+      "value": 1139.0,
+      "unit": "steps",
+      "lastUpdated": "2026-07-31T13:01:56.765244+00:00"
+    },
+    "distanceMeters": {
+      "entityId": "sensor.s26_bruno_daily_distance",
+      "value": 438.72012,
+      "unit": "m",
+      "lastUpdated": "2026-07-31T13:01:56.761863+00:00"
+    },
+    "elevationGainedMeters": {
+      "entityId": "sensor.s26_bruno_daily_elevation_gained",
+      "value": 0.0,
+      "unit": "m",
+      "lastUpdated": "2026-07-31T10:58:03.509891+00:00"
+    },
+    "floors": {
+      "entityId": "sensor.s26_bruno_daily_floors",
+      "value": 0.0,
+      "unit": "floors",
+      "lastUpdated": "2026-07-31T10:58:03.510565+00:00"
+    },
+    "activeCalories": {
+      "entityId": "sensor.s26_bruno_active_calories_burned",
+      "value": 399.0,
+      "unit": "kcal",
+      "lastUpdated": "2026-07-31T10:58:03.502398+00:00"
+    },
+    "totalCalories": {
+      "entityId": "sensor.s26_bruno_total_calories_burned",
+      "value": 516.45,
+      "unit": "kcal",
+      "lastUpdated": "2026-07-31T11:42:13.780463+00:00"
+    },
+    "detectedActivity": {
+      "entityId": "sensor.s26_bruno_detected_activity",
+      "value": "still",
+      "unit": "",
+      "lastUpdated": "2026-07-31T12:14:36.971570+00:00"
+    },
+    "weightGrams": {
+      "entityId": "sensor.s26_bruno_weight",
+      "value": 83000.0,
+      "unit": "g",
+      "lastUpdated": "2026-07-31T10:58:03.520292+00:00"
+    },
+    "heightMeters": {
+      "entityId": "sensor.s26_bruno_height",
+      "value": 1.82,
+      "unit": "m",
+      "lastUpdated": "2026-07-31T10:58:03.512806+00:00"
+    },
+    "basalMetabolicRate": {
+      "entityId": "sensor.s26_bruno_basal_metabolic_rate",
+      "value": 1739.5,
+      "unit": "kcal/day",
+      "lastUpdated": "2026-07-31T10:58:03.503785+00:00"
+    },
+    "bodyFatPercent": {
+      "entityId": "sensor.s26_bruno_body_fat",
+      "value": null,
+      "unit": "%",
+      "lastUpdated": "2026-07-31T10:58:03.505288+00:00"
+    },
+    "leanBodyMassGrams": {
+      "entityId": "sensor.s26_bruno_lean_body_mass",
+      "value": null,
+      "unit": "g",
+      "lastUpdated": "2026-07-31T10:58:03.514221+00:00"
+    },
+    "bodyWaterMassGrams": {
+      "entityId": "sensor.s26_bruno_body_water_mass",
+      "value": null,
+      "unit": "g",
+      "lastUpdated": "2026-07-31T10:58:03.506816+00:00"
+    },
+    "boneMassGrams": {
+      "entityId": "sensor.s26_bruno_bone_mass",
+      "value": null,
+      "unit": "g",
+      "lastUpdated": "2026-07-31T10:58:03.507397+00:00"
+    },
+    "vo2Max": {
+      "entityId": "sensor.s26_bruno_vo2_max",
+      "value": null,
+      "unit": "mL/kg/min",
+      "lastUpdated": "2026-07-31T10:58:03.519643+00:00"
+    },
+    "bloodGlucose": {
+      "entityId": "sensor.s26_bruno_blood_glucose",
+      "value": null,
+      "unit": "mg/dL",
+      "lastUpdated": "2026-07-31T10:58:03.504705+00:00"
+    },
+    "diastolicBloodPressure": {
+      "entityId": "sensor.s26_bruno_diastolic_blood_pressure",
+      "value": null,
+      "unit": "mmHg",
+      "lastUpdated": "2026-07-31T10:58:03.508137+00:00"
+    },
+    "systolicBloodPressure": {
+      "entityId": "sensor.s26_bruno_systolic_blood_pressure",
+      "value": null,
+      "unit": "mmHg",
+      "lastUpdated": "2026-07-31T10:58:03.518336+00:00"
+    },
+    "bodyTemperature": {
+      "entityId": "sensor.s26_bruno_body_temperature",
+      "value": null,
+      "unit": "°C",
+      "lastUpdated": "2026-07-31T10:58:03.506151+00:00"
+    },
+    "basalBodyTemperature": {
+      "entityId": "sensor.s26_bruno_basal_body_temperature",
+      "value": null,
+      "unit": "°C",
+      "lastUpdated": "2026-07-31T10:58:03.503195+00:00"
+    },
+    "dailyHydration": {
+      "entityId": "sensor.s26_bruno_daily_hydration",
+      "value": 0.0,
+      "unit": "mL",
+      "lastUpdated": "2026-07-31T10:58:03.513429+00:00"
+    }
+  }
+}

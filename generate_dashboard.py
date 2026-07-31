@@ -276,7 +276,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     <h3 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">Recuperação (Sono)</h3>
                     <div class="metric-value {sleep_color}">{sleep_duration}</div>
                     <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
-                        FC Repouso: {rhr} bpm (Média 7d: {rhr7d})
+                        FC Repouso: {rhr} bpm (Média 7d: {rhr7d})<br>
+                        {recovery_sub_html}
                     </div>
                 </div>
             </td>
@@ -679,9 +680,27 @@ def main():
     cyc_vo2 = ts.get("estimated_cycling_vo2max") or "n/a"
     fitness_age = ts.get("estimated_fitness_age_combined") or ts.get("fitnessAge") or "n/a"
     
-    sleep_duration = sleep.get("durationFormatted", "n/a")
-    rhr = summary.get("restingHeartRate", "n/a")
-    rhr7d = summary.get("restingHeartRate7dAvg", "n/a")
+    hc = metrics.get("healthConnect", {})
+    hc_cardio = hc.get("cardiovascular", {})
+    hc_sleep = hc.get("sleep", {})
+    
+    sleep_duration = sleep.get("durationFormatted") or sleep.get("healthConnectDurationFormatted") or hc_sleep.get("durationFormatted") or "n/a"
+    rhr = summary.get("restingHeartRate") or hc_cardio.get("restingHeartRate") or "n/a"
+    rhr7d = summary.get("restingHeartRate7dAvg") or "n/a"
+
+    hrv_val = metrics.get("hrv", {}).get("lastNightAvg") or hc_cardio.get("heartRateVariability")
+    resp_val = summary.get("respiratoryRate") or hc_cardio.get("respiratoryRate")
+    spo2_val = summary.get("oxygenSaturation") or hc_cardio.get("oxygenSaturation")
+    
+    recovery_sub_parts = []
+    if hrv_val:
+        recovery_sub_parts.append(f"HRV: {hrv_val} ms")
+    if resp_val:
+        recovery_sub_parts.append(f"Resp: {resp_val} bpm")
+    if spo2_val:
+        recovery_sub_parts.append(f"SpO2: {spo2_val}%")
+        
+    recovery_sub_html = " | ".join(recovery_sub_parts) if recovery_sub_parts else ""
     
     activities = ts.get("recentActivities", [])
     
@@ -902,6 +921,7 @@ def main():
         sleep_color=sleep_color,
         rhr=rhr,
         rhr7d=rhr7d,
+        recovery_sub_html=recovery_sub_html,
         briefing_html=briefing_html,
         activities_html=activities_html,
         briefing_json=json.dumps(briefing_text),

@@ -195,25 +195,31 @@ def main():
         elif not args.no_strava and not has_strava_config:
             print(">>> [Layer 1b] Strava skipped (STRAVA_CLIENT_ID/SECRET not configured in .env)\n")
 
-        # Step 3: Calculate combined training load
-        has_strava_data = os.path.exists(strava_path)
-        load_cmd = [
-            python_exe, str(project_dir / "calc_training_load.py"),
-            "--garmin-data", output_path,
-            "--strava-data", strava_path,
-        ]
-        if args.date:
-            load_cmd.extend(["--date", args.date])
-        
-        run_step("[Layer 1c] Calculating combined training load (TRIMP + ACWR)...", load_cmd, project_dir)
+        health_connect_path = os.path.join(project_dir, "health_connect_data.json")
+        hc_cmd = [python_exe, str(project_dir / "fetch_health_connect.py"), "--output", health_connect_path]
+        run_step("[Layer 1c] Collecting health metrics from Health Connect (Zepp / Amazfit)...", hc_cmd, project_dir)
         print()
     else:
-        print(f"\n>>> [Layers 1a-1c] Skipping all API calls. Using cached files.\n")
+        print(f"\n>>> [Layers 1a-1c] Skipping API calls. Using cached files.\n")
 
     # Check if garmin_data.json exists
     if not os.path.exists(output_path):
         print(f"Error: '{output_path}' does not exist. Run without --cached first.", file=sys.stderr)
         sys.exit(1)
+
+    # Calculate combined training load & merge Health Connect + Strava metrics into garmin_data.json
+    health_connect_path = os.path.join(project_dir, "health_connect_data.json")
+    load_cmd = [
+        python_exe, str(project_dir / "calc_training_load.py"),
+        "--garmin-data", output_path,
+        "--strava-data", strava_path,
+        "--health-connect-data", health_connect_path,
+    ]
+    if args.date:
+        load_cmd.extend(["--date", args.date])
+    
+    run_step("[Layer 1d] Calculating combined training load & merging Health Connect...", load_cmd, project_dir)
+    print()
 
     # Step 4: Interpretation
     interpret_cmd = [python_exe, str(project_dir / "interpret_briefing.py"), output_path]

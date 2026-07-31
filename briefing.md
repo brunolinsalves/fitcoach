@@ -1,16 +1,16 @@
-🔋 Briefing Diário — 28/07/2026
+🔋 Briefing Diário — 31/07/2026
 
-**Recuperação:** 🟢
-Você teve uma noite de sono excepcional com 9h10m de duração e baixo estresse médio (18), o que indica uma excelente capacidade de recuperação. Sua frequência cardíaca de repouso está ligeiramente abaixo da média semanal, um ótimo sinal de que seu corpo está pronto para responder ao treino.
+**Recuperação:** 🟡
+Seu sono de 6h24m (com um segmento restaurador de 5h36m registrado pelo Amazfit Helio Strap via Health Connect) está um pouco abaixo do ideal, e a FC de repouso (53 bpm) mostra uma leve elevação em relação à sua média semanal (51 bpm). No entanto, sua Variabilidade da Frequência Cardíaca (HRV de 53 ms) está equilibrada, com SpO2 (99%) e frequência respiratória (17 bpm) normais, indicando uma capacidade moderada de adaptação ao estresse.
 
 **Carga:** 🟡
-Seu ACWR combinado está em 0.79, o que o posiciona na faixa de destreino leve e mantém seu status de treino como "UNPRODUCTIVE". Isso significa que sua carga aguda (41.4) está aquém da carga crônica (52.5), indicando que o estímulo tem sido insuficiente para impulsionar novas adaptações nos últimos dias. Há uma clara oportunidade para aumentar o volume e/ou a intensidade.
+Seu ACWR combinado está em 0.79, indicando um estado de leve destreino ou uma fase de recuperação, conforme o status "RECOVERY" do Garmin. A carga aguda (40.5) está inferior à carga crônica (51.2), o que aponta para uma subcarga recente, abrindo uma excelente janela de oportunidade para estimular adaptações e aumentar seu condicionamento sem risco.
 
 **Performance:** 🟡
-Seu VO2Max combinado atual é de 43.9, classificando-o como "Satisfatório" para sua idade, mas já na borda superior dessa categoria, bem próximo de atingir a faixa "Bom". Com uma tendência de fitness estável/em melhora, há um grande potencial para cruzar para a próxima categoria e ver ganhos significativos.
+Com um VO2Max combinado de 43.9 mL/kg/min, você se encontra na faixa "Satisfatório" para sua idade, próximo ao limite superior. Embora não haja uma tendência de melhora acentuada nos últimos dias (trend "Stagnant"), é um ponto de partida sólido para buscar o próximo nível de performance.
 
 **Análise Integrada:** 🔍
-Com sua recuperação em estado de prontidão máxima e uma carga de treino que pede por mais estímulo, você está em uma posição privilegiada para forçar adaptações. Seu corpo está descansado e seu status "UNPRODUCTIVE" aponta para a necessidade de um impulso. Este é o momento ideal para aplicar um treino que desafie seu sistema e promova o avanço do seu VO2Max.
+Você está em um ponto estratégico: a recuperação é moderada, mas suficiente para absorver estímulos, enquanto a carga de treino está um pouco abaixo do ideal, sinalizando que seu corpo está pronto para mais. A performance, embora sólida, tem espaço claro para avançar. Este cenário cria a oportunidade perfeita para introduzir um treino de qualidade que irá impulsionar sua adaptação fisiológica e levar seu VO2Max para a próxima categoria, aproveitando a "fome" do seu corpo por mais desafio.
 
 **Ação do Dia:** 🎯
-Hoje é terça-feira e não há treino de corrida agendado no RUNNA, o que significa uma excelente oportunidade para focar no ciclismo e aumentar sua carga de treino de forma inteligente. Com sua recuperação em alta e o objetivo de sair do status "UNPRODUCTIVE", vamos dar um estímulo significativo. Acesse a categoria **Threshold** no MyWhoosh e selecione o workout **Over-Under 3x12min (LOAD previsto: ~68)**. Este treino desafiará seu limiar de potência e será fundamental para elevar sua capacidade de desempenho!
+Como não há treino de corrida agendado no RUNNA para hoje e sua carga está baixa, aproveite esta Sexta-feira para um estímulo de ciclismo eficaz! Acesse a categoria **Sweetspot** no MyWhoosh e selecione o workout **Sustained Sweetspot (LOAD previsto: ~68)**. Este treino desafiará seu sistema cardiovascular e muscular de forma controlada, sendo ideal para construir a capacidade aeróbica e empurrar o limiar de fadiga.
