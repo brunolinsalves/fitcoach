@@ -143,8 +143,22 @@ def get_briefing_prompt(data):
     if ts_params and ts_params.get("cyclingFTP"):
         cycling_ftp = ts_params.get("cyclingFTP")
 
+    # Prepare a sanitized copy of metrics for LLM prompt (remove massive raw arrays)
+    prompt_metrics = json.loads(json.dumps(metrics))
+    if "zepp" in prompt_metrics and isinstance(prompt_metrics["zepp"], dict):
+        z = prompt_metrics["zepp"]
+        # Keep essential summaries (sleep, cardiovascular, vfcDiaria, readiness, etc.),
+        # prune massive raw minute-by-minute arrays (bodyBattery, stress, spO2, sleepData, rawEvents)
+        keys_to_prune = [
+            "bodyBattery", "stress", "spO2", "sleepData", "rawEvents",
+            "allDayStress", "respiratoryRate", "heartRateSamples", "bandPayload"
+        ]
+        for k in keys_to_prune:
+            if k in z:
+                del z[k]
+
     # Format the data into a readable text chunk for the model
-    data_str = json.dumps(metrics, indent=2, ensure_ascii=False)
+    data_str = json.dumps(prompt_metrics, indent=2, ensure_ascii=False)
     
     prompt = f"""
 Você é um treinador de alto rendimento e cientista do esporte especialista em fisiologia da corrida e ciclismo.
@@ -167,32 +181,25 @@ Dados fisiológicos e de treinos em formato JSON:
 
 ---
 
-**INSTRUÇÕES DE ANÁLISE:**
-
 ### 1. 🔋 Recuperação
-Avalie com base nos dados integrados (priorizando **Health Connect / Amazfit Helio Strap via Zepp**):
-- **Sono do Health Connect:** Duração de sono (ex: `durationFormatted` = 06:24:00, segmento = 05:36:00 do Amazfit Helio Strap). **É OBRIGATÓRIO citar os dados de sono do Health Connect / Zepp.**
-- **Variabilidade da Frequência Cardíaca (HRV):** OBRIGATÓRIO citar o HRV em ms do objeto `hrv` / `healthConnect.cardiovascular.heartRateVariability` (ex: 53 ms).
-- **Frequência Respiratória e SpO2:** Se disponíveis em `healthConnect.cardiovascular` (ex: 17 bpm e 99% SpO2).
-- **Frequência Cardíaca de Repouso (FC Repouso):** Citar o valor de FC de repouso (ex: 53 bpm).
+Avalie com base nos dados integrados (utilizando **EXCLUSIVAMENTE a Zepp Cloud API / Amazfit Helio Strap**):
+- **Sono do Zepp:** Duração de sono (ex: `durationFormatted` = 08:20:00 do Amazfit Helio Strap via Zepp Cloud). **É OBRIGATÓRIO citar os dados de sono do Zepp.**
+- **Variabilidade da Frequência Cardíaca (HRV):** OBRIGATÓRIO citar o HRV em ms do objeto `hrv` / `zepp.cardiovascular.heartRateVariability` (ex: 49 ms).
+- **Frequência Cardíaca de Repouso (FC Repouso):** Citar APENAS a FC de repouso do Zepp (ex: `zepp.cardiovascular.restingHeartRate` = 48 bpm). **É PROIBIDO citar ou comparar valores de FC de repouso do Garmin (ex: 70 bpm).**
+- **Frequência Respiratória e SpO2:** Se disponíveis em `zepp.cardiovascular` (ex: 17 bpm e 99% SpO2).
 
 **Semáforo:**
-- 🟢 Verde: Excelente — HRV estável/elevado (≥50 ms), SpO2 normal (97–100%), respiração estável (12–18 bpm), sono reparador (≥7h ou segmento restaurador).
+- 🟢 Verde: Excelente — HRV estável/elevado (≥50 ms), SpO2 normal (97–100%), respiração estável (12–18 bpm), sono reparador (≥7h).
 - 🟡 Amarelo: Moderada — HRV em queda leve ou intermediário, sono intermediário (5.5h–7h) ou FC repouso levemente elevada (+2–4 bpm).
 - 🔴 Vermelho: Precária — HRV desequilibrado/baixo (<40 ms), sono curto (<5.5h) ou FC repouso nitidamente elevada (+5+ bpm).
 
 **Detalhe esperado na saída (2–3 frases):**
-- **Duração objetiva do sono do Health Connect / Zepp (mencionar os dados do Amazfit Helio Strap, ex: 6h24m)**
+- **Duração objetiva do sono do Zepp (mencionar os dados do Amazfit Helio Strap, ex: 8h20m)**
 - **Estado da Variabilidade da Frequência Cardíaca (HRV em ms) e FC de repouso (bpm)**
 - **Métricas adicionais (Frequência respiratória bpm / SpO2 %) e prontidão prática para o dia**
 
 ---
 
-### 2. ⚡ Carga de Treino
-Avalie com base em: ACWR, Acute Load (carga aguda), Chronic Load (carga crônica), TRIMP das atividades recentes e status de treino.
-
-**Semáforo:**
-- 🟢 Verde: ACWR entre 0.8 e 1.3 — zona ideal de adaptação.
 - 🟡 Amarelo: ACWR entre 1.3–1.5 ou 0.5–0.8 — risco moderado (sobrecarga ou destreino leve).
 - 🔴 Vermelho: ACWR > 1.5 (alto risco de lesão) ou < 0.5 (destreino acentuado).
 
@@ -290,24 +297,28 @@ def generate_local_fallback(data):
     hrv = metrics.get("hrv", {})
     readiness = metrics.get("trainingReadiness", {})
     status = metrics.get("trainingStatus", {})
-    hc = metrics.get("healthConnect", {})
-    hc_cardio = hc.get("cardiovascular", {})
-    hc_sleep = hc.get("sleep", {})
+    zepp = metrics.get("zepp", {})
+    z_cardio = zepp.get("cardiovascular", {})
+    z_sleep = zepp.get("sleep", {})
     
     # --- RECOVERY ---
     readiness_score = readiness.get("score")
     sleep_score = sleep.get("sleepScore")
     sleep_duration = sleep.get("durationSeconds")
     
-    # Extrat metrics with Health Connect / Zepp fallback
-    hrv_val = hrv.get("lastNightAvg") or hc_cardio.get("heartRateVariability")
-    resp_rate = summary.get("respiratoryRate") or hc_cardio.get("respiratoryRate")
-    spo2_val = summary.get("oxygenSaturation") or hc_cardio.get("oxygenSaturation")
-    resting_hr = summary.get("restingHeartRate") or hc_cardio.get("restingHeartRate")
+    # Extract metrics with Zepp Cloud API fallback
+    hrv_val = hrv.get("lastNightAvg") or z_cardio.get("heartRateVariability")
+    resp_rate = summary.get("respiratoryRate") or z_cardio.get("respiratoryRate")
+    spo2_val = summary.get("oxygenSaturation") or z_cardio.get("oxygenSaturation")
+    resting_hr = summary.get("restingHeartRate") or z_cardio.get("restingHeartRate")
     resting_hr_7d = summary.get("restingHeartRate7dAvg")
     
-    sleep_fmt = sleep.get("durationFormatted") or sleep.get("healthConnectDurationFormatted") or hc_sleep.get("durationFormatted") or "n/a"
-    sleep_segment_fmt = sleep.get("healthConnectSegmentFormatted") or hc_sleep.get("sleepSegmentFormatted")
+    sleep_fmt = sleep.get("durationFormatted") or z_sleep.get("durationFormatted") or "n/a"
+    sleep_segment_fmt = (
+        f"{z_sleep.get('sleepStart', '')[11:16]}–{z_sleep.get('sleepEnd', '')[11:16]}"
+        if z_sleep.get("sleepStart") and z_sleep.get("sleepEnd")
+        else None
+    )
     
     rec_val = "🟡"
     details_parts = []

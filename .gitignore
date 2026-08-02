@@ -1,10 +1,13 @@
 .env
 .venv/
 .garminconnect/
+.zepp_tokens.json
 garmin_data.json
 strava_tokens.json
 strava_activities.json
+zepp_data.json
 __pycache__/
 *.pyc
 debug_*.py
 debug_*.txt
+

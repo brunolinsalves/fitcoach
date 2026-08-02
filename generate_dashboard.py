@@ -680,17 +680,17 @@ def main():
     cyc_vo2 = ts.get("estimated_cycling_vo2max") or "n/a"
     fitness_age = ts.get("estimated_fitness_age_combined") or ts.get("fitnessAge") or "n/a"
     
-    hc = metrics.get("healthConnect", {})
-    hc_cardio = hc.get("cardiovascular", {})
-    hc_sleep = hc.get("sleep", {})
+    zepp = metrics.get("zepp", {})
+    z_cardio = zepp.get("cardiovascular", {})
+    z_sleep = zepp.get("sleep", {})
     
-    sleep_duration = sleep.get("durationFormatted") or sleep.get("healthConnectDurationFormatted") or hc_sleep.get("durationFormatted") or "n/a"
-    rhr = summary.get("restingHeartRate") or hc_cardio.get("restingHeartRate") or "n/a"
+    sleep_duration = sleep.get("durationFormatted") or z_sleep.get("durationFormatted") or "n/a"
+    rhr = summary.get("restingHeartRate") or z_cardio.get("restingHeartRate") or "n/a"
     rhr7d = summary.get("restingHeartRate7dAvg") or "n/a"
 
-    hrv_val = metrics.get("hrv", {}).get("lastNightAvg") or hc_cardio.get("heartRateVariability")
-    resp_val = summary.get("respiratoryRate") or hc_cardio.get("respiratoryRate")
-    spo2_val = summary.get("oxygenSaturation") or hc_cardio.get("oxygenSaturation")
+    hrv_val = metrics.get("hrv", {}).get("lastNightAvg") or z_cardio.get("heartRateVariability")
+    resp_val = summary.get("respiratoryRate") or z_cardio.get("respiratoryRate")
+    spo2_val = summary.get("oxygenSaturation") or z_cardio.get("oxygenSaturation")
     
     recovery_sub_parts = []
     if hrv_val:
@@ -886,15 +886,28 @@ def main():
         pw = planned_workouts[0]
         title = pw.get("title", "Treino Agendado")
         origin = pw.get("origin", "Runna Plan")
-        desc = (pw.get("description") or "").replace("\n", "<br>")
+        raw_desc = pw.get("description") or ""
+        
+        # Format description with line breaks and high-contrast email-friendly links
+        desc_formatted = raw_desc.replace("\n", "<br>")
+        import re
+        url_pattern = r'(https?://[^\s<]+)'
+        desc_formatted = re.sub(
+            url_pattern,
+            r'<a href="\1" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: 600; word-break: break-all;">\1</a>',
+            desc_formatted
+        )
+
+        display_title = title if title.startswith("🏃") else f"🏃 {title}"
         planned_workout_html = f"""
-        <div class="glass-panel" style="border-left: 4px solid #3b82f6; background: rgba(59, 130, 246, 0.08); margin-bottom: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <h3 style="font-size: 0.85rem; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.05em;">📅 Treino Agendado no Plano ({origin})</h3>
-                <span style="background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.3);">{origin}</span>
+        <div style="background-color: #1e293b; border-left: 5px solid #3b82f6; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; box-sizing: border-box;">
+            <div style="margin-bottom: 8px;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em;">📅 TREINO AGENDADO NO PLANO ({origin.upper()})</span>
             </div>
-            <div style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin-bottom: 8px;">🏃 {title}</div>
-            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">{desc}</div>
+            <div style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin-bottom: 12px; line-height: 1.3;">{display_title}</div>
+            <div style="font-size: 0.95rem; color: #f8fafc; line-height: 1.6; background-color: #0f172a; padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                {desc_formatted}
+            </div>
         </div>
         """
 

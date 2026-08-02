@@ -518,6 +518,7 @@ def parse_arguments():
     parser.add_argument("--garmin-data", type=str, default="garmin_data.json", help="Path to garmin_data.json")
     parser.add_argument("--strava-data", type=str, default="strava_activities.json", help="Path to strava_activities.json")
     parser.add_argument("--health-connect-data", type=str, default="health_connect_data.json", help="Path to health_connect_data.json")
+    parser.add_argument("--zepp-data", type=str, default="zepp_data.json", help="Path to zepp_data.json")
     parser.add_argument("--date", type=str, default=date.today().isoformat(), help="Target date for ACWR (YYYY-MM-DD)")
     parser.add_argument("--days", type=int, default=42, help="Days of history for ACWR calculation")
     return parser.parse_args()
@@ -636,15 +637,15 @@ def main():
     else:
         est_fitness_age_combined = None
 
-    # Load Health Connect Data
-    hc_data = None
-    if os.path.exists(args.health_connect_data):
+    # Load Zepp Data
+    zepp_data = None
+    if os.path.exists(args.zepp_data):
         try:
-            with open(args.health_connect_data, "r", encoding="utf-8") as f:
-                hc_data = json.load(f)
-            print(f"  Loaded Health Connect data from {args.health_connect_data}")
+            with open(args.zepp_data, "r", encoding="utf-8") as f:
+                zepp_data = json.load(f)
+            print(f"  Loaded Zepp Cloud data from {args.zepp_data}")
         except Exception as e:
-            print(f"  Warning: Could not read Health Connect data: {e}", file=sys.stderr)
+            print(f"  Warning: Could not read Zepp data: {e}", file=sys.stderr)
 
     # Enrich garmin_data.json
     if garmin_report:
@@ -672,43 +673,49 @@ def main():
         
         garmin_report["metrics"]["trainingStatus"] = ts
 
-        # Inject Health Connect metrics
-        if hc_data:
-            garmin_report["metrics"]["healthConnect"] = hc_data
-            cardio = hc_data.get("cardiovascular", {})
-            sleep_hc = hc_data.get("sleep", {})
+        # Inject Zepp Cloud API metrics (exclusive source for Sleep & HRV)
+        if zepp_data:
+            garmin_report["metrics"]["zepp"] = zepp_data
+            z_cardio = zepp_data.get("cardiovascular", {})
+            z_sleep = zepp_data.get("sleep", {})
 
-            # Set primary HRV from Health Connect (Amazfit Helio Strap) if available
-            if cardio.get("heartRateVariability"):
+            # Set primary HRV from Zepp Cloud API (Amazfit Helio Strap)
+            if z_cardio.get("heartRateVariability"):
                 garmin_report["metrics"]["hrv"] = {
                     "status": "BALANCED",
-                    "lastNightAvg": cardio.get("heartRateVariability"),
-                    "weeklyAvg": cardio.get("heartRateVariability"),
-                    "source": "Health Connect / Zepp (Amazfit Helio Strap)"
+                    "lastNightAvg": z_cardio.get("heartRateVariability"),
+                    "weeklyAvg": z_cardio.get("heartRateVariability"),
+                    "source": "Zepp Cloud API (Amazfit Helio Strap)"
                 }
 
-            # Set primary Sleep from Health Connect (Amazfit Helio Strap) if available
-            if sleep_hc.get("durationFormatted"):
+            # Set primary Sleep from Zepp Cloud API (Amazfit Helio Strap)
+            if z_sleep.get("durationFormatted") and z_sleep.get("durationFormatted") != "n/a":
                 garmin_report["metrics"]["garminSleep"] = garmin_report["metrics"].get("sleep")
                 garmin_report["metrics"]["sleep"] = {
-                    "date": args.date,
-                    "durationFormatted": sleep_hc.get("durationFormatted"),
-                    "durationMinutes": sleep_hc.get("durationMinutes"),
-                    "durationSeconds": int(sleep_hc.get("durationMinutes", 0) * 60) if sleep_hc.get("durationMinutes") else None,
-                    "sleepSegmentFormatted": sleep_hc.get("sleepSegmentFormatted"),
-                    "sleepConfidence": sleep_hc.get("sleepConfidence"),
-                    "source": "Health Connect / Zepp (Amazfit Helio Strap)"
+                    "date": z_sleep.get("date", args.date),
+                    "durationFormatted": z_sleep.get("durationFormatted"),
+                    "durationMinutes": z_sleep.get("durationMinutes"),
+                    "durationSeconds": int(z_sleep.get("durationMinutes", 0) * 60) if z_sleep.get("durationMinutes") else None,
+                    "sleepStart": z_sleep.get("sleepStart"),
+                    "sleepEnd": z_sleep.get("sleepEnd"),
+                    "source": "Zepp Cloud API (Amazfit Helio Strap)"
                 }
 
-            # Enrich Daily Summary (resting HR, SpO2, Respiratory rate)
+            # Enrich Daily Summary (resting HR, SpO2, Respiratory rate) from Zepp
             daily_sum = garmin_report["metrics"].setdefault("dailySummary", {})
-            if cardio.get("restingHeartRate"):
-                daily_sum["restingHeartRateZepp"] = cardio.get("restingHeartRate")
-                daily_sum["restingHeartRate"] = cardio.get("restingHeartRate")
-            if cardio.get("oxygenSaturation"):
-                daily_sum["oxygenSaturation"] = cardio.get("oxygenSaturation")
-            if cardio.get("respiratoryRate"):
-                daily_sum["respiratoryRate"] = cardio.get("respiratoryRate")
+            if z_cardio.get("restingHeartRate"):
+                daily_sum["restingHeartRateZepp"] = z_cardio.get("restingHeartRate")
+                daily_sum["restingHeartRate"] = z_cardio.get("restingHeartRate")
+            else:
+                daily_sum.pop("restingHeartRate", None)
+            
+            # Remove Garmin's 7d resting HR average to prevent confusion with Garmin RHR
+            daily_sum.pop("restingHeartRate7dAvg", None)
+
+            if z_cardio.get("oxygenSaturation"):
+                daily_sum["oxygenSaturation"] = z_cardio.get("oxygenSaturation")
+            if z_cardio.get("respiratoryRate"):
+                daily_sum["respiratoryRate"] = z_cardio.get("respiratoryRate")
         
         # Inject Race Predictions if missing or previously calculated
         race_preds = garmin_report["metrics"].get("racePredictions", {})
