@@ -208,11 +208,21 @@ def fetch_runna_workouts(url: str, min_date: str = None):
         summary = summary.replace("\\,", ",").replace("\\;", ";").replace("\\n", "\n").replace("\\", "")
         
         description = ev.get("DESCRIPTION", "")
-        description = description.replace("\\,", ",").replace("\\;", ";").replace("\\n", "\n").replace("\\", "")
-        
+        # Ignore completed activities synced back into Runna iCal feed (marked with Resumo: or activityId)
+        if "📊 resumo:" in description.lower() or "activityid" in description.lower():
+            continue
+
         dtstart = ev.get("DTSTART", "")
         date_str = ""
-        if len(dtstart) >= 8:
+        if "T" in dtstart and dtstart.endswith("Z"):
+            try:
+                from zoneinfo import ZoneInfo
+                utc_dt = datetime.datetime.strptime(dtstart, "%Y%m%dT%H%M%SZ").replace(tzinfo=datetime.timezone.utc)
+                local_dt = utc_dt.astimezone(ZoneInfo("America/Maceio"))
+                date_str = local_dt.date().isoformat()
+            except Exception:
+                date_str = f"{dtstart[0:4]}-{dtstart[4:6]}-{dtstart[6:8]}"
+        elif len(dtstart) >= 8:
             date_str = f"{dtstart[0:4]}-{dtstart[4:6]}-{dtstart[6:8]}"
             
         if date_str and date_str >= min_date:
