@@ -693,11 +693,16 @@ def main():
                 garmin_report["metrics"]["garminSleep"] = garmin_report["metrics"].get("sleep")
                 garmin_report["metrics"]["sleep"] = {
                     "date": z_sleep.get("date", args.date),
+                    "sleepScore": z_sleep.get("sleepScore"),
                     "durationFormatted": z_sleep.get("durationFormatted"),
                     "durationMinutes": z_sleep.get("durationMinutes"),
                     "durationSeconds": int(z_sleep.get("durationMinutes", 0) * 60) if z_sleep.get("durationMinutes") else None,
                     "sleepStart": z_sleep.get("sleepStart"),
                     "sleepEnd": z_sleep.get("sleepEnd"),
+                    "deepSleepMinutes": z_sleep.get("deepSleepMinutes"),
+                    "lightSleepMinutes": z_sleep.get("lightSleepMinutes"),
+                    "awakeMinutes": z_sleep.get("awakeMinutes"),
+                    "restingHeartRate": z_sleep.get("restingHeartRate"),
                     "source": "Zepp Cloud API (Amazfit Helio Strap)"
                 }
 

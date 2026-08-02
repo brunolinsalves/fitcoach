@@ -22,6 +22,7 @@ Requires ZEPP_APP_TOKEN and ZEPP_USER_ID configured in .env.
 """
 
 import argparse
+import base64
 import json
 import os
 import sys
@@ -335,6 +336,94 @@ class ZeppAPIClient:
         return items if isinstance(items, list) else []
 
 
+def parse_blood_pressure_events(events_bp: list[dict]) -> tuple[list[dict], dict | None]:
+    """
+    Parse blood pressure events (both manual additions and automatic measurements) into GMT-3 formatted records.
+    Returns (records_list, latest_record).
+    """
+    if not events_bp or not isinstance(events_bp, list):
+        return [], None
+
+    records = []
+    for ev in events_bp:
+        val = ev.get("value", {}) if isinstance(ev, dict) else {}
+        if isinstance(val, str):
+            try:
+                val = json.loads(val)
+            except Exception:
+                val = {}
+
+        ms = val.get("measureTime") or ev.get("timestamp")
+        sbp = val.get("sbp")
+        dbp = val.get("dbp")
+
+        if ms and sbp and dbp:
+            try:
+                dt_utc = datetime.fromtimestamp(float(ms) / 1000.0, tz=timezone.utc)
+                dt_local = dt_utc.astimezone(LOCAL_TZ)
+                records.append({
+                    "date": dt_local.date().isoformat(),
+                    "time": dt_local.strftime("%H:%M:%S"),
+                    "timestampIso": dt_local.isoformat(),
+                    "systolic": int(sbp),
+                    "diastolic": int(dbp),
+                    "formatted": f"{int(sbp)}/{int(dbp)} mmHg",
+                    "subType": ev.get("subType", "manually_add_data")
+                })
+            except Exception:
+                pass
+
+    records.sort(key=lambda r: r["timestampIso"])
+    latest = records[-1] if records else None
+    return records, latest
+
+
+def parse_band_data_sleep_scores(band_payload: list[dict]) -> dict[str, dict]:
+    """
+    Decode Base64 encoded summary blobs from /v1/data/band_data.json and extract sleep scores & breakdown per date.
+    Returns a dictionary keyed by date string (YYYY-MM-DD).
+    """
+    scores_by_date = {}
+    if not band_payload or not isinstance(band_payload, list):
+        return scores_by_date
+
+    for item in band_payload:
+        if not isinstance(item, dict):
+            continue
+        summary_b64 = item.get("summary")
+        if not summary_b64:
+            continue
+        try:
+            summary_dict = json.loads(base64.b64decode(summary_b64).decode("utf-8"))
+            slp = summary_dict.get("slp", {})
+            if not isinstance(slp, dict):
+                continue
+            
+            sleep_score = slp.get("ss")
+            rhr = slp.get("rhr")
+            st = slp.get("st")
+            ed = slp.get("ed")
+            
+            dt_end_local = (
+                datetime.fromtimestamp(ed, tz=timezone.utc).astimezone(LOCAL_TZ)
+                if ed else None
+            )
+            date_key = dt_end_local.date().isoformat() if dt_end_local else item.get("date_time")
+
+            if date_key and sleep_score is not None:
+                scores_by_date[date_key] = {
+                    "sleepScore": int(sleep_score) if isinstance(sleep_score, (int, float)) else None,
+                    "deepSleepMinutes": int(slp.get("dp", 0)) if slp.get("dp") else None,
+                    "lightSleepMinutes": int(slp.get("lt", 0)) if slp.get("lt") else None,
+                    "awakeMinutes": int(slp.get("wk", 0)) if slp.get("wk") else None,
+                    "restingHeartRate": int(rhr) if rhr else None,
+                }
+        except Exception:
+            pass
+
+    return scores_by_date
+
+
 def parse_vfc_diaria_zepp_events(raw_events_hrv: list[dict]) -> list[dict]:
     """
     Parse daily VFC (RMSSD) directly from Zepp HRVRMSSD event blocks and sample arrays.
@@ -513,7 +602,7 @@ def main():
     events_body_battery = client.get_watch_events("Charge", "real_data", inicio, agora)
     events_stress = client.get_watch_events("Charge", "stress_data", inicio, agora)
     events_respiratory = client.get_watch_events("RespiratoryRate", "real_data", inicio, agora)
-    events_blood_pressure = client.get_watch_events("blood_pressure", "real_data", inicio, agora)
+    events_blood_pressure = client.get_watch_events("blood_pressure", None, inicio, agora)
     events_emotion = client.get_watch_events("Emotion", "real_data", inicio, agora)
     events_lactate = client.get_watch_events("LactateThreshold", "summary", inicio, agora)
 
@@ -537,8 +626,16 @@ def main():
     user_info = client.get_user_info()
     blood_pressure_logs = client.get_blood_pressure(days=args.days)
 
-    # ── Parse do VFC Diário a partir das amostras de RMSSD do Zepp ──
+    # ── Parse do VFC Diário, Pressão Arterial e Notas do Sono ──
     vfc_resultados = parse_vfc_diaria_zepp_events(events_hrv_rmssd)
+    bp_records, latest_bp = parse_blood_pressure_events(events_blood_pressure)
+    sleep_scores_map = parse_band_data_sleep_scores(band_payload)
+
+    # Merge sleepScore into vfcDiaria entries
+    for r in vfc_resultados:
+        sc_info = sleep_scores_map.get(r["date"])
+        if sc_info:
+            r["sleepScore"] = sc_info.get("sleepScore")
 
     # Extração das métricas mais recentes para o objeto cardiovascular e sono
     latest_hrv = vfc_resultados[-1]["roundedValue"] if vfc_resultados else None
@@ -572,13 +669,19 @@ def main():
             dur_min = 0.0
             dur_fmt = "n/a"
 
+        latest_sc = sleep_scores_map.get(ultimo["date"], {})
+
         sleep_summary = {
             "date": ultimo["date"],
+            "sleepScore": latest_sc.get("sleepScore"),
+            "deepSleepMinutes": latest_sc.get("deepSleepMinutes"),
+            "lightSleepMinutes": latest_sc.get("lightSleepMinutes"),
+            "awakeMinutes": latest_sc.get("awakeMinutes"),
             "sleepStart": ultimo["sleepStart"],
             "sleepEnd": ultimo["sleepEnd"],
             "durationMinutes": round(dur_min, 1),
             "durationFormatted": dur_fmt,
-            "restingHeartRate": latest_sleep_rhr,
+            "restingHeartRate": latest_sleep_rhr or latest_sc.get("restingHeartRate"),
             "readingCount": ultimo.get("readingCount"),
             "source": "Zepp Cloud API (Amazfit Helio Strap)"
         }
@@ -590,6 +693,8 @@ def main():
         "cardiovascular": {
             "heartRate": latest_hr,
             "restingHeartRate": latest_sleep_rhr,
+            "bloodPressure": latest_bp["formatted"] if latest_bp else None,
+            "bloodPressureDetails": latest_bp,
             "heartRateVariability": latest_hrv,
             "heartRateVariabilitySource": "Zepp Cloud API RMSSD samples mean",
             "heartRateVariabilityDate": latest_hrv_date,
@@ -616,8 +721,10 @@ def main():
         },
         "pai": user_pai,
         "bloodPressure": {
+            "latest": latest_bp,
+            "records": bp_records,
             "logs": blood_pressure_logs,
-            "events": events_blood_pressure,
+            "rawEvents": events_blood_pressure,
         },
         "emotion": events_emotion,
         "lactateThreshold": events_lactate,

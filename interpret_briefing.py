@@ -183,7 +183,7 @@ Dados fisiológicos e de treinos em formato JSON:
 
 ### 1. 🔋 Recuperação
 Avalie com base nos dados integrados (utilizando **EXCLUSIVAMENTE a Zepp Cloud API / Amazfit Helio Strap**):
-- **Sono do Zepp:** Duração de sono (ex: `durationFormatted` = 08:20:00 do Amazfit Helio Strap via Zepp Cloud). **É OBRIGATÓRIO citar os dados de sono do Zepp.**
+- **Sono do Zepp:** Duração de sono (ex: `durationFormatted` = 08:20:00 do Amazfit Helio Strap via Zepp Cloud) e **Nota do Sono do Zepp** (ex: `sleepScore` = 84/100). **É OBRIGATÓRIO citar os dados de sono do Zepp e a Nota do Sono (0-100) quando disponíveis.**
 - **Variabilidade da Frequência Cardíaca (HRV):** OBRIGATÓRIO citar o HRV em ms do objeto `hrv` / `zepp.cardiovascular.heartRateVariability` (ex: 49 ms).
 - **Frequência Cardíaca de Repouso (FC Repouso):** Citar APENAS a FC de repouso do Zepp (ex: `zepp.cardiovascular.restingHeartRate` = 48 bpm). **É PROIBIDO citar ou comparar valores de FC de repouso do Garmin (ex: 70 bpm).**
 - **Frequência Respiratória e SpO2:** Se disponíveis em `zepp.cardiovascular` (ex: 17 bpm e 99% SpO2).
@@ -324,7 +324,8 @@ def generate_local_fallback(data):
     details_parts = []
     
     if sleep_fmt and sleep_fmt != "n/a":
-        details_parts.append(f"Sono: {sleep_fmt}" + (f" (segmento: {sleep_segment_fmt})" if sleep_segment_fmt else ""))
+        score_str = f" (Nota do Sono: {sleep_score}/100)" if sleep_score else ""
+        details_parts.append(f"Sono: {sleep_fmt}{score_str}" + (f" [segmento: {sleep_segment_fmt}]" if sleep_segment_fmt else ""))
     if hrv_val:
         details_parts.append(f"HRV: {hrv_val} ms")
     if resting_hr:
