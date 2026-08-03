@@ -701,6 +701,7 @@ def main():
                     "sleepEnd": z_sleep.get("sleepEnd"),
                     "deepSleepMinutes": z_sleep.get("deepSleepMinutes"),
                     "lightSleepMinutes": z_sleep.get("lightSleepMinutes"),
+                    "remSleepMinutes": z_sleep.get("remSleepMinutes"),
                     "awakeMinutes": z_sleep.get("awakeMinutes"),
                     "restingHeartRate": z_sleep.get("restingHeartRate"),
                     "source": "Zepp Cloud API (Amazfit Helio Strap)"

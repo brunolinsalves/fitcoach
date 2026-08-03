@@ -404,18 +404,44 @@ def parse_band_data_sleep_scores(band_payload: list[dict]) -> dict[str, dict]:
             st = slp.get("st")
             ed = slp.get("ed")
             
+            dt_start_local = (
+                datetime.fromtimestamp(st, tz=timezone.utc).astimezone(LOCAL_TZ)
+                if st else None
+            )
             dt_end_local = (
                 datetime.fromtimestamp(ed, tz=timezone.utc).astimezone(LOCAL_TZ)
                 if ed else None
             )
             date_key = dt_end_local.date().isoformat() if dt_end_local else item.get("date_time")
 
-            if date_key and sleep_score is not None:
+            dp_min = int(slp.get("dp", 0)) if slp.get("dp") else 0
+            lt_min = int(slp.get("lt", 0)) if slp.get("lt") else 0
+            rem_min = int(slp.get("dt", 0)) if slp.get("dt") else 0
+            wk_min = int(slp.get("wk", 0)) if slp.get("wk") else 0
+
+            # Calculate actual sleep duration (deep + light + REM)
+            if dp_min or lt_min or rem_min:
+                duration_min = float(dp_min + lt_min + rem_min)
+            elif st and ed:
+                duration_min = max(0.0, (ed - st) / 60.0 - wk_min)
+            else:
+                duration_min = 0.0
+
+            h = int(duration_min // 60)
+            m = int(duration_min % 60)
+            dur_fmt = f"{h:02d}:{m:02d}"
+
+            if date_key and (sleep_score is not None or duration_min > 0):
                 scores_by_date[date_key] = {
                     "sleepScore": int(sleep_score) if isinstance(sleep_score, (int, float)) else None,
-                    "deepSleepMinutes": int(slp.get("dp", 0)) if slp.get("dp") else None,
-                    "lightSleepMinutes": int(slp.get("lt", 0)) if slp.get("lt") else None,
-                    "awakeMinutes": int(slp.get("wk", 0)) if slp.get("wk") else None,
+                    "deepSleepMinutes": dp_min,
+                    "lightSleepMinutes": lt_min,
+                    "remSleepMinutes": rem_min,
+                    "awakeMinutes": wk_min,
+                    "durationMinutes": round(duration_min, 1),
+                    "durationFormatted": dur_fmt,
+                    "sleepStart": dt_start_local.isoformat() if dt_start_local else None,
+                    "sleepEnd": dt_end_local.isoformat() if dt_end_local else None,
                     "restingHeartRate": int(rhr) if rhr else None,
                 }
         except Exception:
@@ -656,35 +682,46 @@ def main():
                 break
 
     sleep_summary = {}
-    if vfc_resultados:
-        ultimo = vfc_resultados[-1]
+    target_date = vfc_resultados[-1]["date"] if vfc_resultados else agora_date.isoformat()
+    latest_sc = sleep_scores_map.get(target_date) or (list(sleep_scores_map.values())[-1] if sleep_scores_map else {})
+
+    ultimo_vfc = vfc_resultados[-1] if vfc_resultados else {}
+
+    sleep_start = latest_sc.get("sleepStart") or ultimo_vfc.get("sleepStart")
+    sleep_end = latest_sc.get("sleepEnd") or ultimo_vfc.get("sleepEnd")
+    dur_min = latest_sc.get("durationMinutes")
+
+    if dur_min is None and sleep_start and sleep_end:
         try:
-            s_dt = _parse_iso_timestamp(ultimo["sleepStart"])
-            e_dt = _parse_iso_timestamp(ultimo["sleepEnd"])
+            s_dt = _parse_iso_timestamp(sleep_start)
+            e_dt = _parse_iso_timestamp(sleep_end)
             dur_min = (e_dt - s_dt).total_seconds() / 60.0 if s_dt and e_dt else 0.0
-            h = int(dur_min // 60)
-            m = int(dur_min % 60)
-            dur_fmt = f"{h:02d}:{m:02d}"
         except Exception:
             dur_min = 0.0
-            dur_fmt = "n/a"
 
-        latest_sc = sleep_scores_map.get(ultimo["date"], {})
+    if dur_min is not None and dur_min > 0:
+        h = int(dur_min // 60)
+        m = int(dur_min % 60)
+        dur_fmt = f"{h:02d}:{m:02d}"
+    else:
+        dur_min = 0.0
+        dur_fmt = "n/a"
 
-        sleep_summary = {
-            "date": ultimo["date"],
-            "sleepScore": latest_sc.get("sleepScore"),
-            "deepSleepMinutes": latest_sc.get("deepSleepMinutes"),
-            "lightSleepMinutes": latest_sc.get("lightSleepMinutes"),
-            "awakeMinutes": latest_sc.get("awakeMinutes"),
-            "sleepStart": ultimo["sleepStart"],
-            "sleepEnd": ultimo["sleepEnd"],
-            "durationMinutes": round(dur_min, 1),
-            "durationFormatted": dur_fmt,
-            "restingHeartRate": latest_sleep_rhr or latest_sc.get("restingHeartRate"),
-            "readingCount": ultimo.get("readingCount"),
-            "source": "Zepp Cloud API (Amazfit Helio Strap)"
-        }
+    sleep_summary = {
+        "date": target_date,
+        "sleepScore": latest_sc.get("sleepScore"),
+        "deepSleepMinutes": latest_sc.get("deepSleepMinutes"),
+        "lightSleepMinutes": latest_sc.get("lightSleepMinutes"),
+        "remSleepMinutes": latest_sc.get("remSleepMinutes"),
+        "awakeMinutes": latest_sc.get("awakeMinutes"),
+        "sleepStart": sleep_start,
+        "sleepEnd": sleep_end,
+        "durationMinutes": round(dur_min, 1) if dur_min else None,
+        "durationFormatted": dur_fmt,
+        "restingHeartRate": latest_sleep_rhr or latest_sc.get("restingHeartRate"),
+        "readingCount": ultimo_vfc.get("readingCount"),
+        "source": "Zepp Cloud API (Amazfit Helio Strap)"
+    }
 
     output_data = {
         "source": "Zepp Cloud API (Amazfit Helio Strap)",
