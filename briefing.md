@@ -1,16 +1,16 @@
-🔋 Briefing Diário — 03/08/2026
+🔋 Briefing Diário — 04/08/2026
 
-**Recuperação:** 🟡
-Seu sono de 06:31 (Nota 67/100, via Amazfit Helio Strap) foi um pouco abaixo do ideal em termos de duração, mas sua Variabilidade da Frequência Cardíaca está excelente em 53 ms e sua Frequência Cardíaca de Repouso permanece notável em 48 bpm. Isso indica que, embora o tempo de sono possa ser otimizado, seu corpo está respondendo bem ao descanso profundo, mantendo uma base fisiológica sólida para o treino.
+**Recuperação:** 🟢 Verde
+O monitoramento do Amazfit Helio Strap via Zepp Cloud registrou um repouso prolongado de 09h56m, embora a qualidade tenha sido moderada com um sleep score de 69/100, devido à predominância de sono leve (401 min) e 58 min acordado. No entanto, sua resposta autonômica é excelente: a Variabilidade da Frequência Cardíaca (HRV) está perfeitamente equilibrada em 51 ms e a frequência cardíaca de repouso (FCR) do Zepp está extremamente baixa e estável em 47 bpm, confirmando uma forte dominância parassimpática e excelente prontidão cardiovascular.
 
-**Carga:** 🟡
-Seu ACWR combinado de 0.82 indica que você está em uma fase controlada, sem risco de sobrecarga, permitindo que seu corpo se adapte e se fortaleça. A carga semanal total de 331.4 TRIMP, combinada com o status "RECOVERY" do Garmin, mostra um período de construção de base inteligente e sustentável. Você está no caminho certo para uma progressão consistente.
+**Carga:** 🟢 Verde
+Seu ACWR combinado está em excelentes 0.94, consolidando você exatamente no centro da "zona de transição segura" (0.8–1.3) para ganho de performance com baixo risco de lesão. A carga aguda (49.9) está bem controlada em relação à crônica (53.3), e a consistência das atividades recentes — mesmo após o exigente treino longo de corrida de ontem (TRIMP de 100.6) — mostra que seu corpo está tolerando muito bem o volume atual.
 
-**Performance:** 🟡
-Seu VO2Max combinado de 43.9 te posiciona na faixa 'Satisfatório' para sua idade, próximo ao limite superior da categoria. Isso demonstra uma boa capacidade aeróbica e um excelente ponto de partida para impulsionar ainda mais sua performance, com um claro potencial de evolução para a faixa 'Bom'.
+**Performance:** 🟡 Amarelo
+Seu VO2Max estimado combinado atual é de 43.9, o que o classifica na categoria "Satisfatório" para sua faixa etária (39 anos), bem no limiar de transição para a classificação "Bom" (a partir de 44.0). Esse cenário aponta que sua base aeróbica está consolidada, mas há uma excelente margem de desenvolvimento para impulsionar sua eficiência cardiorrespiratória em ambos os esportes.
 
 **Análise Integrada:** 🔍
-Você apresenta uma resiliência fisiológica forte, evidenciada pelo seu excelente HRV e FC de repouso, mesmo com um sono que poderia ser mais longo. A carga de treino está bem gerenciada, favorecendo a adaptação e a prevenção de overreaching, o que é crucial para progredir no seu VO2Max atual. Hoje é um dia para consolidar essa base e construir a próxima camada de performance.
+Sua fisiologia hoje é um exemplo de manual de resiliência: mesmo vindo de um treino de corrida longo e desgastante ontem, sua HRV estabilizou em 51 ms e a FCR despencou para 47 bpm, provando que você absorveu o estímulo perfeitamente. Com o ACWR em 0.94 e sem corrida agendada na planilha RUNNA hoje, temos o cenário perfeito para aplicar uma carga de ciclismo focada em potência aeróbica, poupando suas articulações do impacto ortopédico e direcionando o estímulo direto para a elevação do seu VO2Max.
 
 **Ação do Dia:** 🎯
-Com a recuperação em um estado moderado e a carga bem gerenciada, é o momento perfeito para executar o treino planejado! Saia para o seu **🏃 Treino longo de 12 km em bloco** do Runna Plan, focando na precisão dos ritmos. Comece com 3km em ritmo de conversa, acelere para 3km a 6:10/km, volte para 3km em ritmo de conversa e finalize com mais 3km a 6:10/km. Este treino é fundamental para construir sua resistência e força. Concentre-se na sua técnica e na sensação dos diferentes ritmos. Você está forte, vamos para cima!
+Como hoje é um dia sem corrida no seu calendário RUNNA, realizaremos um trabalho de ciclismo focado em eficiência metabólica no simulador virtual. Acesse a categoria **Sweetspot** no MyWhoosh e selecione o workout **Sweet Spot 3x10min (LOAD previsto: ~62)**. Com base no seu FTP de **178W**, execute os intervalos de 10 minutos estritamente na zona target de 88% a 93% do seu FTP (entre **156W e 165W**), mantendo uma cadência fluida entre 85–95 RPM para maximizar a adaptação cardiovascular sem sobrecarregar a musculatura periférica.

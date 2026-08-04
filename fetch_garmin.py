@@ -246,21 +246,21 @@ def extract_training_status(api, target_date):
     result = {}
 
     # --- VO2Max ---
-    vo2max_obj = status_raw.get("mostRecentVO2Max", {})
-    if vo2max_obj:
-        generic = vo2max_obj.get("generic", {})
-        if generic:
+    vo2max_obj = status_raw.get("mostRecentVO2Max") or {}
+    if vo2max_obj and isinstance(vo2max_obj, dict):
+        generic = vo2max_obj.get("generic") or {}
+        if generic and isinstance(generic, dict):
             result["vo2Max"] = generic.get("vo2MaxPreciseValue")
             result["vo2MaxDate"] = generic.get("calendarDate")
             result["fitnessAge"] = generic.get("fitnessAge")
 
-        cycling = vo2max_obj.get("cycling", {})
-        if cycling:
+        cycling = vo2max_obj.get("cycling") or {}
+        if cycling and isinstance(cycling, dict):
             result["vo2MaxCycling"] = cycling.get("vo2MaxPreciseValue")
 
     # --- Training Status (nested inside mostRecentTrainingStatus) ---
-    most_recent = status_raw.get("mostRecentTrainingStatus", {})
-    latest_data = most_recent.get("latestTrainingStatusData", {})
+    most_recent = status_raw.get("mostRecentTrainingStatus") or {}
+    latest_data = (most_recent.get("latestTrainingStatusData") or {}) if isinstance(most_recent, dict) else {}
     
     # latestTrainingStatusData is keyed by deviceId (e.g. "3982518093")
     # We iterate to find any device's data
@@ -271,9 +271,9 @@ def extract_training_status(api, target_date):
             if isinstance(data, dict):
                 device_status = data
                 # Try to find device name
-                recorded_devices = most_recent.get("recordedDevices", [])
+                recorded_devices = (most_recent.get("recordedDevices") or []) if isinstance(most_recent, dict) else []
                 for dev in (recorded_devices or []):
-                    if str(dev.get("deviceId")) == str(device_id):
+                    if isinstance(dev, dict) and str(dev.get("deviceId")) == str(device_id):
                         device_name = dev.get("deviceName")
                 break
 
