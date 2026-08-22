@@ -247,42 +247,123 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         {briefing_html}
     </div>
 
-    <table class="responsive-table" cellpadding="0" cellspacing="0" style="width: 100%; border: none; margin-bottom: 1.5rem;">
-        <tr>
-            <td valign="top" style="width: 32%; padding-right: 2%; border: none;">
-                <div class="glass-panel" style="min-height: 200px; margin-bottom: 0;">
-                    <h3 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">Carga / ACWR</h3>
-                    {acwr_gauge_html}
-                    <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
-                        Aguda: {acute_val} | Crônica: {chronic_val}<br>
-                        Semanal: {weekly_val}
+    <div style="margin-bottom: 1.5rem;">
+        <div style="margin-bottom: 12px;">
+            <h2 style="color: #f8fafc; font-size: 1.3rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;">Performance & Status de Treino</h2>
+        </div>
+        <table class="responsive-table" cellpadding="0" cellspacing="0" style="width: 100%; border: none; margin-bottom: 0;">
+            <tr>
+                <td valign="top" style="width: 32%; padding-right: 2%; border: none;">
+                    <div class="glass-panel" style="min-height: 200px; margin-bottom: 0;">
+                        <h3 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">Carga / ACWR</h3>
+                        {acwr_gauge_html}
+                        <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
+                            Aguda: {acute_val} | Crônica: {chronic_val}<br>
+                            Semanal: {weekly_val}
+                        </div>
                     </div>
-                </div>
-            </td>
-            
-            <td valign="top" style="width: 32%; padding-right: 2%; border: none;">
-                <div class="glass-panel" style="min-height: 200px; margin-bottom: 0;">
-                    <h3 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">VO2 Máx</h3>
-                    {vo2_gauge_html}
-                    <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
-                        Idade Fitness: {fitness_age} anos<br>
-                        Corrida: {run_vo2} | Ciclismo: {cyc_vo2}
+                </td>
+                
+                <td valign="top" style="width: 32%; padding-right: 2%; border: none;">
+                    <div class="glass-panel" style="min-height: 200px; margin-bottom: 0;">
+                        <h3 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">VO2 Máx (Corrida)</h3>
+                        {vo2_running_gauge_html}
+                        <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
+                            Idade Fitness: {fitness_age} anos<br>
+                            Oficial Garmin Connect
+                        </div>
                     </div>
-                </div>
-            </td>
-            
-            <td valign="top" style="width: 32%; border: none;">
-                <div class="glass-panel" style="min-height: 200px; margin-bottom: 0;">
-                    <h3 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">Recuperação (Sono)</h3>
-                    <div class="metric-value {sleep_color}">{sleep_duration}</div>
-                    <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
-                        FC Repouso: {rhr} bpm (Média 7d: {rhr7d})<br>
-                        {recovery_sub_html}
+                </td>
+                
+                <td valign="top" style="width: 32%; border: none;">
+                    <div class="glass-panel" style="min-height: 200px; margin-bottom: 0;">
+                        <h3 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">VO2 Máx (Ciclismo)</h3>
+                        {vo2_cycling_gauge_html}
+                        <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
+                            FTP Configurado: {cycling_ftp}W<br>
+                            Oficial Garmin Connect
+                        </div>
                     </div>
-                </div>
-            </td>
-        </tr>
-    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+        <div style="margin-bottom: 12px;">
+            <h2 style="color: #f8fafc; font-size: 1.3rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;">Recuperação & Biomarcadores</h2>
+        </div>
+        
+        <!-- Linha 1 de Recuperação: Sono, FC Repouso, Body Battery -->
+        <table class="responsive-table" cellpadding="0" cellspacing="0" style="width: 100%; border: none; margin-bottom: 12px;">
+            <tr>
+                <td valign="top" style="width: 32%; padding-right: 2%; border: none;">
+                    <div class="glass-panel" style="margin-bottom: 0; padding: 1.25rem;">
+                        <h3 style="font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Sono</h3>
+                        <div class="metric-value {sleep_color}" style="font-size: 1.8rem; margin-bottom: 0.25rem;">{sleep_display}</div>
+                        <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.4;">
+                            {sleep_sub_html}
+                        </div>
+                    </div>
+                </td>
+                
+                <td valign="top" style="width: 32%; padding-right: 2%; border: none;">
+                    <div class="glass-panel" style="margin-bottom: 0; padding: 1.25rem;">
+                        <h3 style="font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">FC Repouso</h3>
+                        <div class="metric-value {rhr_color}" style="font-size: 1.8rem; margin-bottom: 0.25rem;">{rhr_display}</div>
+                        <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.4;">
+                            {rhr_sub_html}
+                        </div>
+                    </div>
+                </td>
+                
+                <td valign="top" style="width: 32%; border: none;">
+                    <div class="glass-panel" style="margin-bottom: 0; padding: 1.25rem;">
+                        <h3 style="font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Body Battery</h3>
+                        <div class="metric-value {bb_color}" style="font-size: 1.8rem; margin-bottom: 0.25rem;">{bb_display}</div>
+                        <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.4;">
+                            {bb_sub_html}
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Linha 2 de Recuperação: VFC, Respiração, SpO2 -->
+        <table class="responsive-table" cellpadding="0" cellspacing="0" style="width: 100%; border: none; margin-bottom: 0;">
+            <tr>
+                <td valign="top" style="width: 32%; padding-right: 2%; border: none;">
+                    <div class="glass-panel" style="margin-bottom: 0; padding: 1.25rem;">
+                        <h3 style="font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">VFC (HRV Noturna)</h3>
+                        <div class="metric-value {hrv_color}" style="font-size: 1.8rem; margin-bottom: 0.25rem;">{hrv_display}</div>
+                        <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.4;">
+                            {hrv_sub_html}
+                        </div>
+                    </div>
+                </td>
+                
+                <td valign="top" style="width: 32%; padding-right: 2%; border: none;">
+                    <div class="glass-panel" style="margin-bottom: 0; padding: 1.25rem;">
+                        <h3 style="font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Respiração</h3>
+                        <div class="metric-value color-blue" style="font-size: 1.8rem; margin-bottom: 0.25rem;">{resp_display}</div>
+                        <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.4;">
+                            {resp_sub_html}
+                        </div>
+                    </div>
+                </td>
+                
+                <td valign="top" style="width: 32%; border: none;">
+                    <div class="glass-panel" style="margin-bottom: 0; padding: 1.25rem;">
+                        <h3 style="font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">SpO2 (Oximetria)</h3>
+                        <div class="metric-value {spo2_color}" style="font-size: 1.8rem; margin-bottom: 0.25rem;">{spo2_display}</div>
+                        <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.4;">
+                            {spo2_sub_html}
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
 
     {race_predictions_html}
 
@@ -403,6 +484,49 @@ def get_vo2_percentage_and_zone(vo2: float, sex: str, age: int):
         
     return pct, zone, color_class, zone_class, min_val, t_sat, t_bom, t_exc, t_sup, max_val
 
+def build_vo2_gauge_html(vo2_val, sex, age):
+    if isinstance(vo2_val, (int, float)):
+        val_float = float(vo2_val)
+        pct, zone_name, val_color_class, zone_class, min_val, t_sat, t_bom, t_exc, t_sup, max_val = get_vo2_percentage_and_zone(val_float, sex, age)
+        
+        return f"""
+        <div class="gauge-container">
+            <div class="gauge-header">
+                <span class="gauge-value {val_color_class}">{val_float:.1f}</span>
+                <span class="gauge-zone {zone_class}">{zone_name}</span>
+            </div>
+            <div class="gauge-bar-container" style="background: linear-gradient(to right, 
+                #ef4444 0%, #ef4444 20%, 
+                #f59e0b 20%, #f59e0b 40%, 
+                #3b82f6 40%, #3b82f6 60%, 
+                #10b981 60%, #10b981 80%, 
+                #8b5cf6 80%, #8b5cf6 100%
+            );">
+                <div class="gauge-marker" style="margin-left: {pct}%;"></div>
+            </div>
+            <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 11px; color: #94a3b8; margin-top: 4px; border: none;">
+                <tr>
+                    <td style="width: 20%; text-align: left; border: none; padding: 0;">{min_val:.1f}</td>
+                    <td style="width: 20%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_sat:.1f}</td>
+                    <td style="width: 20%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_bom:.1f}</td>
+                    <td style="width: 20%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_exc:.1f}</td>
+                    <td style="width: 10%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_sup:.1f}</td>
+                    <td style="width: 10%; text-align: right; border: none; padding: 0;">{max_val:.1f}+</td>
+                </tr>
+            </table>
+        </div>
+        """
+    else:
+        return """
+        <div class="gauge-container">
+            <div class="gauge-header">
+                <span class="gauge-value">n/a</span>
+                <span class="gauge-zone zone-gray">Sem dados</span>
+            </div>
+            <div class="gauge-bar-container" style="background: #334155;"></div>
+        </div>
+        """
+
 def markdown_to_html(md_text):
     if not md_text:
         return "<p style='color: #94a3b8;'>Nenhum briefing encontrado.</p>"
@@ -521,8 +645,14 @@ def generate_activities_html(activities):
         trimp = act.get("trimp")
         trimp_str = f"{trimp:.1f}" if isinstance(trimp, (int, float)) else "-"
         
-        vo2 = act.get("estimated_vo2max")
-        vo2_str = f"{vo2:.1f}" if isinstance(vo2, (int, float)) else "-"
+        garmin_vo2 = act.get("garmin_vo2max")
+        est_vo2 = act.get("estimated_vo2max")
+        if isinstance(garmin_vo2, (int, float)):
+            vo2_str = f"{garmin_vo2:.1f}"
+        elif isinstance(est_vo2, (int, float)):
+            vo2_str = f"{est_vo2:.1f}*"
+        else:
+            vo2_str = "-"
         
         source = act.get("source", "")
         source_style = "background: rgba(252, 76, 2, 0.15); color: #fc4c02; border: 1px solid rgba(252, 76, 2, 0.3);" if source == "strava" else "background: rgba(0, 124, 195, 0.15); color: #007cc3; border: 1px solid rgba(0, 124, 195, 0.3);"
@@ -670,43 +800,152 @@ def main():
     summary = metrics.get("dailySummary", {})
     
     # Extract Values
+    training_status_label = ts.get("trainingStatus", "MANUTENÇÃO")
     acwr_val = ts.get("acwr_combined") or ts.get("acwr")
-    acute_val = ts.get("acuteEWMA_combined") or "n/a"
-    chronic_val = ts.get("chronicEWMA_combined") or "n/a"
+    acute_val = ts.get("acuteEWMA_combined") or ts.get("acuteLoad") or "n/a"
+    chronic_val = ts.get("chronicEWMA_combined") or ts.get("chronicLoad") or "n/a"
     weekly_val = ts.get("weeklyLoadTrimp_combined") or ts.get("weeklyTrainingLoad") or "n/a"
     
-    vo2_val = ts.get("estimated_vo2max_combined") or ts.get("vo2Max")
-    run_vo2 = ts.get("estimated_running_vo2max") or "n/a"
-    cyc_vo2 = ts.get("estimated_cycling_vo2max") or "n/a"
-    fitness_age = ts.get("estimated_fitness_age_combined") or ts.get("fitnessAge") or "n/a"
+    run_vo2 = ts.get("vo2Max")
+    cyc_vo2 = ts.get("vo2MaxCycling")
+    cycling_ftp = ts.get("loadCalculationParams", {}).get("cyclingFTP") or 178
+    fitness_age = metrics.get("fitnessAge", {}).get("fitnessAge") or ts.get("fitnessAge") or "n/a"
     
-    zepp = metrics.get("zepp", {})
-    z_cardio = zepp.get("cardiovascular", {})
-    z_sleep = zepp.get("sleep", {})
+    # 1. Sleep
+    sleep_score = sleep.get("sleepScore") or (sleep.get("sleepScores", {}).get("overall", {}).get("value") if isinstance(sleep.get("sleepScores"), dict) else None)
+    sleep_duration_raw = sleep.get("durationFormatted", "n/a")
+    deep_sleep = sleep.get("deepSleepFormatted")
+    rem_sleep = sleep.get("remSleepFormatted")
     
-    sleep_duration = sleep.get("durationFormatted") or z_sleep.get("durationFormatted") or "n/a"
-    rhr = summary.get("restingHeartRate") or z_cardio.get("restingHeartRate") or "n/a"
-    rhr7d = summary.get("restingHeartRate7dAvg") or "n/a"
+    if sleep_score and sleep_duration_raw != "n/a":
+        sleep_display = f"{sleep_duration_raw} <span style='font-size: 1.05rem; font-weight: 600; color: #94a3b8;'>({sleep_score}/100)</span>"
+    else:
+        sleep_display = sleep_duration_raw
 
-    hrv_val = metrics.get("hrv", {}).get("lastNightAvg") or z_cardio.get("heartRateVariability")
-    resp_val = summary.get("respiratoryRate") or z_cardio.get("respiratoryRate")
-    spo2_val = summary.get("oxygenSaturation") or z_cardio.get("oxygenSaturation")
+    sleep_sub_parts = []
+    if deep_sleep:
+        sleep_sub_parts.append(f"Profundo: {deep_sleep}")
+    if rem_sleep:
+        sleep_sub_parts.append(f"REM: {rem_sleep}")
+    sleep_sub_html = " | ".join(sleep_sub_parts) if sleep_sub_parts else "Qualidade monitorada Garmin"
+
+    sleep_color = "color-yellow"
+    if sleep.get("durationSeconds"):
+        h = sleep["durationSeconds"] / 3600
+        if h >= 7.0 or (sleep_score and sleep_score >= 80): sleep_color = "color-green"
+        elif h < 6.0 and (not sleep_score or sleep_score < 75): sleep_color = "color-red"
+
+    # 2. Resting Heart Rate
+    rhr = summary.get("restingHeartRate")
+    rhr7d = summary.get("restingHeartRate7dAvg")
     
-    recovery_sub_parts = []
-    if hrv_val:
-        recovery_sub_parts.append(f"HRV: {hrv_val} ms")
-    if resp_val:
-        recovery_sub_parts.append(f"Resp: {resp_val} bpm")
-    if spo2_val:
-        recovery_sub_parts.append(f"SpO2: {spo2_val}%")
-        
-    recovery_sub_html = " | ".join(recovery_sub_parts) if recovery_sub_parts else ""
+    if rhr is not None:
+        rhr_display = f"{rhr} <span style='font-size: 1.05rem; font-weight: 500; color: #94a3b8;'>bpm</span>"
+    else:
+        rhr_display = "n/a"
+
+    if rhr7d:
+        diff_str = ""
+        if rhr is not None:
+            diff = rhr - rhr7d
+            if diff < 0:
+                diff_str = f" <span style='color: #10b981; font-weight: 600;'>({diff} bpm)</span>"
+            elif diff > 0:
+                diff_str = f" <span style='color: #ef4444; font-weight: 600;'>(+{diff} bpm)</span>"
+        rhr_sub_html = f"Média 7d: {rhr7d} bpm{diff_str}"
+    else:
+        rhr_sub_html = "Frequência cardíaca basal"
+
+    rhr_color = "color-green"
+    if rhr and rhr7d and (rhr - rhr7d) > 4:
+        rhr_color = "color-red"
+    elif rhr and rhr7d and (rhr - rhr7d) > 2:
+        rhr_color = "color-yellow"
+
+    # 3. Body Battery
+    body_battery = metrics.get("bodyBattery", {})
+    bb_current = body_battery.get("current")
+    bb_charged = body_battery.get("charged") or body_battery.get("duringSleep")
+    bb_drained = body_battery.get("drained")
+    
+    if bb_current is not None:
+        bb_display = f"{bb_current} <span style='font-size: 1.05rem; font-weight: 500; color: #94a3b8;'>/ 100</span>"
+    else:
+        bb_display = "n/a"
+
+    bb_sub_parts = []
+    if bb_charged is not None:
+        bb_sub_parts.append(f"+{bb_charged} no sono")
+    if bb_drained is not None:
+        bb_sub_parts.append(f"-{bb_drained} gasto")
+    bb_sub_html = " | ".join(bb_sub_parts) if bb_sub_parts else "Energia estimada Garmin"
+
+    bb_color = "color-yellow"
+    if bb_current is not None:
+        if bb_current >= 65: bb_color = "color-green"
+        elif bb_current < 35: bb_color = "color-red"
+
+    # 4. HRV / VFC
+    hrv_val = metrics.get("hrv", {}).get("lastNightAvg")
+    hrv_peak = metrics.get("hrv", {}).get("lastNight5MinHigh")
+    hrv_status = metrics.get("hrv", {}).get("status")
+    
+    if hrv_val is not None:
+        hrv_display = f"{hrv_val} <span style='font-size: 1.05rem; font-weight: 500; color: #94a3b8;'>ms</span>"
+    else:
+        hrv_display = "n/a"
+
+    hrv_sub_parts = []
+    if hrv_peak:
+        hrv_sub_parts.append(f"Pico 5-min: {hrv_peak} ms")
+    if hrv_status and hrv_status != "NONE":
+        hrv_sub_parts.append(f"Status: {hrv_status}")
+    hrv_sub_html = " | ".join(hrv_sub_parts) if hrv_sub_parts else "Média noturna Garmin"
+
+    hrv_color = "color-yellow"
+    if hrv_val is not None:
+        if hrv_val >= 50: hrv_color = "color-green"
+        elif hrv_val < 38: hrv_color = "color-red"
+
+    # 5. Respiration
+    resp_obj = summary.get("respiration", {})
+    resp_val = resp_obj.get("waking") or summary.get("respiratoryRate")
+    resp_sleep = resp_obj.get("sleep")
+    
+    if resp_val is not None:
+        resp_display = f"{resp_val:.1f} <span style='font-size: 1.05rem; font-weight: 500; color: #94a3b8;'>rpm</span>"
+    else:
+        resp_display = "n/a"
+
+    if resp_sleep is not None:
+        resp_sub_html = f"Sono: {resp_sleep:.1f} rpm | Repouso"
+    else:
+        resp_sub_html = "Ritmo basal (12–20 rpm)"
+
+    # 6. SpO2
+    spo2_obj = summary.get("spO2", {})
+    spo2_val = spo2_obj.get("average") or summary.get("oxygenSaturation")
+    spo2_min = spo2_obj.get("lowest")
+    
+    if spo2_val is not None:
+        spo2_display = f"{spo2_val:.1f}<span style='font-size: 1.05rem; font-weight: 500; color: #94a3b8;'>%</span>"
+    else:
+        spo2_display = "n/a"
+
+    if spo2_min:
+        spo2_sub_html = f"Mínima: {spo2_min}% | Saturação Normal"
+    else:
+        spo2_sub_html = "Média diária em repouso"
+
+    spo2_color = "color-green"
+    if spo2_val is not None:
+        if spo2_val < 90: spo2_color = "color-red"
+        elif spo2_val < 95: spo2_color = "color-yellow"
     
     activities = ts.get("recentActivities", [])
     
     # Formatting
     acwr_color = get_color_class(acwr_val, "acwr") if acwr_val else ""
-    vo2_color = get_color_class(vo2_val, "vo2") if vo2_val else ""
 
     # Build ACWR gauge HTML
     if isinstance(acwr_val, (int, float)):
@@ -762,48 +1001,7 @@ def main():
         </div>
         """
 
-    # Build VO2 Max gauge HTML
-    if isinstance(vo2_val, (int, float)):
-        val_float = float(vo2_val)
-        pct, zone_name, val_color_class, zone_class, min_val, t_sat, t_bom, t_exc, t_sup, max_val = get_vo2_percentage_and_zone(val_float, sex, age)
-        
-        vo2_gauge_html = f"""
-        <div class="gauge-container">
-            <div class="gauge-header">
-                <span class="gauge-value {val_color_class}">{val_float:.1f}</span>
-                <span class="gauge-zone {zone_class}">{zone_name}</span>
-            </div>
-            <div class="gauge-bar-container" style="background: linear-gradient(to right, 
-                #ef4444 0%, #ef4444 20%, 
-                #f59e0b 20%, #f59e0b 40%, 
-                #3b82f6 40%, #3b82f6 60%, 
-                #10b981 60%, #10b981 80%, 
-                #8b5cf6 80%, #8b5cf6 100%
-            );">
-                <div class="gauge-marker" style="margin-left: {pct}%;"></div>
-            </div>
-            <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 11px; color: #94a3b8; margin-top: 4px; border: none;">
-                <tr>
-                    <td style="width: 20%; text-align: left; border: none; padding: 0;">{min_val:.1f}</td>
-                    <td style="width: 20%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_sat:.1f}</td>
-                    <td style="width: 20%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_bom:.1f}</td>
-                    <td style="width: 20%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_exc:.1f}</td>
-                    <td style="width: 10%; text-align: left; border: none; padding: 0; font-weight: 500;">{t_sup:.1f}</td>
-                    <td style="width: 10%; text-align: right; border: none; padding: 0;">{max_val:.1f}+</td>
-                </tr>
-            </table>
-        </div>
-        """
-    else:
-        vo2_gauge_html = """
-        <div class="gauge-container">
-            <div class="gauge-header">
-                <span class="gauge-value">n/a</span>
-                <span class="gauge-zone zone-gray">Sem dados</span>
-            </div>
-            <div class="gauge-bar-container" style="background: #334155;"></div>
-        </div>
-        """
+
     # Sleep color simple logic: >7h green, >6h yellow, else red
     sleep_color = "color-yellow"
     if sleep.get("durationSeconds"):
@@ -914,27 +1112,40 @@ def main():
     briefing_html = markdown_to_html(briefing_text)
     activities_html = generate_activities_html(activities)
 
+    vo2_running_gauge_html = build_vo2_gauge_html(run_vo2, sex, age)
+    vo2_cycling_gauge_html = build_vo2_gauge_html(cyc_vo2, sex, age)
+
     # Inject into HTML
     html = HTML_TEMPLATE.format(
         date=header_date,
         planned_workout_html=planned_workout_html,
         acwr_val=f"{acwr_val:.2f}" if isinstance(acwr_val, float) else (acwr_val or "n/a"),
         acwr_gauge_html=acwr_gauge_html,
-        vo2_gauge_html=vo2_gauge_html,
+        vo2_running_gauge_html=vo2_running_gauge_html,
+        vo2_cycling_gauge_html=vo2_cycling_gauge_html,
+        cycling_ftp=cycling_ftp,
         acute_val=acute_val,
         chronic_val=chronic_val,
         weekly_val=weekly_val,
         acwr_color=acwr_color,
-        vo2_val=f"{vo2_val:.1f}" if isinstance(vo2_val, float) else (vo2_val or "n/a"),
-        run_vo2=run_vo2,
-        cyc_vo2=cyc_vo2,
         fitness_age=fitness_age,
-        vo2_color=vo2_color,
-        sleep_duration=sleep_duration,
+        sleep_display=sleep_display,
+        sleep_sub_html=sleep_sub_html,
         sleep_color=sleep_color,
-        rhr=rhr,
-        rhr7d=rhr7d,
-        recovery_sub_html=recovery_sub_html,
+        rhr_display=rhr_display,
+        rhr_sub_html=rhr_sub_html,
+        rhr_color=rhr_color,
+        bb_display=bb_display,
+        bb_sub_html=bb_sub_html,
+        bb_color=bb_color,
+        hrv_display=hrv_display,
+        hrv_sub_html=hrv_sub_html,
+        hrv_color=hrv_color,
+        resp_display=resp_display,
+        resp_sub_html=resp_sub_html,
+        spo2_display=spo2_display,
+        spo2_sub_html=spo2_sub_html,
+        spo2_color=spo2_color,
         briefing_html=briefing_html,
         activities_html=activities_html,
         briefing_json=json.dumps(briefing_text),

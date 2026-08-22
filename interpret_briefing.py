@@ -87,14 +87,9 @@ def get_briefing_prompt(data):
             age = ref_date.year - birth_date_obj.year - ((ref_date.month, ref_date.day) < (birth_date_obj.month, birth_date_obj.day))
         except Exception:
             pass
-    else:
-        fitness_age_obj = metrics.get("fitnessAge", {})
-        if isinstance(fitness_age_obj, dict) and fitness_age_obj.get("chronologicalAge"):
-            age = fitness_age_obj.get("chronologicalAge")
-        else:
-            ts = metrics.get("trainingStatus", {})
-            age = ts.get("fitnessAge") or 39
-            
+    fitness_age_obj = metrics.get("fitnessAge", {})
+    fitness_age = fitness_age_obj.get("fitnessAge") if isinstance(fitness_age_obj, dict) else (metrics.get("trainingStatus", {}).get("fitnessAge") or age)
+
     # Get the age ranges for prompt description
     men_range = VO2_TABLE_MEN.get(
         "20-29" if age < 20 else ("70-79" if age > 79 else f"{int(age // 10)}0-{int(age // 10)}9")
@@ -143,19 +138,8 @@ def get_briefing_prompt(data):
     if ts_params and ts_params.get("cyclingFTP"):
         cycling_ftp = ts_params.get("cyclingFTP")
 
-    # Prepare a sanitized copy of metrics for LLM prompt (remove massive raw arrays)
+    # Prepare a sanitized copy of metrics for LLM prompt
     prompt_metrics = json.loads(json.dumps(metrics))
-    if "zepp" in prompt_metrics and isinstance(prompt_metrics["zepp"], dict):
-        z = prompt_metrics["zepp"]
-        # Keep essential summaries (sleep, cardiovascular, vfcDiaria, readiness, etc.),
-        # prune massive raw minute-by-minute arrays (bodyBattery, stress, spO2, sleepData, rawEvents)
-        keys_to_prune = [
-            "bodyBattery", "stress", "spO2", "sleepData", "rawEvents",
-            "allDayStress", "respiratoryRate", "heartRateSamples", "bandPayload"
-        ]
-        for k in keys_to_prune:
-            if k in z:
-                del z[k]
 
     # Format the data into a readable text chunk for the model
     data_str = json.dumps(prompt_metrics, indent=2, ensure_ascii=False)
@@ -163,11 +147,11 @@ def get_briefing_prompt(data):
     prompt = f"""
 Você é um treinador de alto rendimento e cientista do esporte especialista em fisiologia da corrida e ciclismo.
 
-Analise os seguintes dados fisiológicos e de performance do atleta (Sexo: {sex_str}, Idade: {age} anos) para a data {formatted_date} ({day_of_week_str}) e gere um briefing detalhado, direto ao ponto e motivador.
+Analise os seguintes dados fisiológicos e de performance do atleta (Sexo: {sex_str}, Idade: {age} anos) obtidos do relógio **Garmin Forerunner 265** para a data {formatted_date} ({day_of_week_str}) e gere um briefing detalhado, direto ao ponto e motivador.
 
 **Sobre os dados:**
-- Os dados incluem métricas fisiológicas, atividades recentes e treinos planejados no calendário (RUNNA / Garmin).
-- Campos com sufixo "_combined" representam métricas recalculadas considerando TODAS as atividades. **Sempre prefira esses valores quando disponíveis.**
+- Os dados incluem métricas fisiológicas completas do Garmin Forerunner 265 (VFC noturna, Body Battery, Sono com Sleep Score, Estresse, Readiness, Load Balance, Idade Fitness oficial, Limiar de Lactato e Previsões de Prova) e treinos planejados no calendário (RUNNA / Garmin).
+- Campos com sufixo "_combined" representam métricas recalculadas considerando TODAS as atividades (incluindo treinos virtuais de ciclismo no Strava / MyWhoosh). **Sempre prefira esses valores quando disponíveis.**
 - O campo "recentActivities" lista as atividades da última semana com o TRIMP calculado de cada uma — use para identificar padrão de carga e tendência.
 - O FTP de Ciclismo do atleta configurado no sistema é **{cycling_ftp}W**.
 
@@ -182,36 +166,46 @@ Dados fisiológicos e de treinos em formato JSON:
 ---
 
 ### 1. 🔋 Recuperação
-Avalie com base nos dados integrados (utilizando **EXCLUSIVAMENTE a Zepp Cloud API / Amazfit Helio Strap**):
-- **Sono do Zepp:** Duração de sono (ex: `durationFormatted` = 08:20:00 do Amazfit Helio Strap via Zepp Cloud) e **Nota do Sono do Zepp** (ex: `sleepScore` = 84/100). **É OBRIGATÓRIO citar os dados de sono do Zepp e a Nota do Sono (0-100) quando disponíveis.**
-- **Variabilidade da Frequência Cardíaca (HRV):** OBRIGATÓRIO citar o HRV em ms do objeto `hrv` / `zepp.cardiovascular.heartRateVariability` (ex: 49 ms).
-- **Frequência Cardíaca de Repouso (FC Repouso):** Citar APENAS a FC de repouso do Zepp (ex: `zepp.cardiovascular.restingHeartRate` = 48 bpm). **É PROIBIDO citar ou comparar valores de FC de repouso do Garmin (ex: 70 bpm).**
-- **Frequência Respiratória e SpO2:** Se disponíveis em `zepp.cardiovascular` (ex: 17 bpm e 99% SpO2).
+Avalie com base nos dados do **Garmin Forerunner 265**:
+- **Sono:** Duração de sono (ex: `durationFormatted`), **Nota do Sono / Sleep Score** (ex: `sleepScore` = 74/100 ou `sleepScores.overall.value`), e fases de sono (Sono Profundo / Deep, Leve / Light, REM, Acordado).
+- **Variabilidade da Frequência Cardíaca (VFC / HRV Noturna):** OBRIGATÓRIO citar a média noturna de VFC em ms (`hrv.lastNightAvg` = 52 ms), pico de 5 min (`hrv.lastNight5MinHigh` = 74 ms) e status/baseline se disponível.
+- **Body Battery & Estresse:** Citar o nível de Body Battery (atual `current`, recarga noturna `duringSleep`/`charged`, gasto `drained`), feedback dinâmico (`dynamicFeedback`) e nível de estresse diário (`dailySummary.stress.average`, `max`, `qualifier`).
+- **Frequência Cardíaca de Repouso (FC Repouso):** Citar a FC de repouso de hoje (`dailySummary.restingHeartRate` bpm) comparando com a média de 7 dias (`dailySummary.restingHeartRate7dAvg` bpm).
+- **Prontidão / Tempo de Recuperação:** Citar o tempo de recuperação restante em horas (`trainingReadiness.recoveryTimeHours` h) e prontidão.
+- **Biomarcadores Adicionais:** Frequência respiratória (waking/sleep rpm) e Oximetria SpO2 (%).
 
 **Semáforo:**
-- 🟢 Verde: Excelente — HRV estável/elevado (≥50 ms), SpO2 normal (97–100%), respiração estável (12–18 bpm), sono reparador (≥7h).
-- 🟡 Amarelo: Moderada — HRV em queda leve ou intermediário, sono intermediário (5.5h–7h) ou FC repouso levemente elevada (+2–4 bpm).
-- 🔴 Vermelho: Precária — HRV desequilibrado/baixo (<40 ms), sono curto (<5.5h) ou FC repouso nitidamente elevada (+5+ bpm).
+- 🟢 Verde: Excelente — HRV estável/elevado (≥50 ms), sono reparador (≥7h ou Sleep Score ≥75), Body Battery alto (≥70), FC repouso estável ou baixa, SpO2 normal (97–100%).
+- 🟡 Amarelo: Moderada — HRV intermediário (40–49 ms), sono intermediário (5.5h–7h ou Sleep Score 60–74), Body Battery moderado (40–69), FC repouso levemente elevada (+2–4 bpm).
+- 🔴 Vermelho: Precária — HRV baixo/desequilibrado (<40 ms), sono curto (<5.5h ou Sleep Score <60), Body Battery baixo (<35), ou FC repouso nitidamente elevada (+5+ bpm).
 
 **Detalhe esperado na saída (2–3 frases):**
-- **Duração objetiva do sono do Zepp (mencionar os dados do Amazfit Helio Strap, ex: 8h20m)**
-- **Estado da Variabilidade da Frequência Cardíaca (HRV em ms) e FC de repouso (bpm)**
-- **Métricas adicionais (Frequência respiratória bpm / SpO2 %) e prontidão prática para o dia**
+- Duração e qualidade do sono (mencionando o Sleep Score da Garmin)
+- VFC noturna (média e pico de 5 min em ms) e FC de repouso (bpm hoje vs média 7d)
+- Body Battery (atual/recarga) e prontidão prática para os treinos do dia
 
 ---
 
-- 🟡 Amarelo: ACWR entre 1.3–1.5 ou 0.5–0.8 — risco moderado (sobrecarga ou destreino leve).
+### 2. 📈 Carga
+Avalie o estado de carga aguda, crônica e equilíbrio de estímulo:
+- **Status do Treino Garmin:** Citar a classificação oficial do relógio (ex: *Ápice / PEAKING*, *Produtivo / PRODUCTIVE*, *Manutenção*, *Recuperação*, *Não Produtivo*, etc.) e a frase de feedback.
+- **ACWR & Carga Aguda/Crônica:** Citar ACWR combinado (ou do Garmin) e a relação de carga aguda vs crônica.
+- **Equilíbrio de Carga (Load Balance):** Se disponível em `trainingStatus.loadBalance`, comentar o equilíbrio mensal (Baixo Aeróbico, Alto Aeróbico, Anaeróbico) e alertas (ex: déficit de Baixo Aeróbico).
+
+**Semáforo:**
+- 🟢 Verde: ACWR entre 0.8–1.3 (Sweet Spot seguro e produtivo) ou Status Produtivo/Ápice.
+- 🟡 Amarelo: ACWR entre 1.3–1.5 ou 0.5–0.8 (risco moderado de sobrecarga ou destreino leve) ou Status Manutenção/Não Produtivo.
 - 🔴 Vermelho: ACWR > 1.5 (alto risco de lesão) ou < 0.5 (destreino acentuado).
 
 **Detalhe esperado na saída (2–3 frases):**
-- Valores de ACWR, carga aguda e crônica com interpretação
+- Status de treino oficial da Garmin e ACWR com interpretação
 - Tendência da semana baseada no "recentActivities" (carga crescente, estável ou decrescente?)
-- Se houver risco de overreaching ou janela de adaptação favorável, mencionar explicitamente
+- Alerta sobre equilíbrio de carga (se houver carência de baixo aeróbico ou anaeróbico)
 
 ---
 
 ### 3. 🏆 Performance
-Use "estimated_vo2max_combined" se disponível; caso contrário, use o VO2Max disponível.
+Use "estimated_vo2max_combined" ou os valores oficiais de VO2Max da Garmin (Corrida e Ciclismo).
 
 **Classificações Cooper por sexo e idade ({age} anos):**
 - Homem: Fraco (<{men_range['Satisfatório']}), Satisfatório ({men_range['Satisfatório']}–{men_range['Bom']}), Bom ({men_range['Bom']}–{men_range['Excelente']}), Excelente ({men_range['Excelente']}–{men_range['Superior']}), Superior (≥{men_range['Superior']})
@@ -223,8 +217,8 @@ Use "estimated_vo2max_combined" se disponível; caso contrário, use o VO2Max di
 - 🔴 Vermelho: Fraco ou queda visível em relação a registros anteriores.
 
 **Detalhe esperado na saída (2 frases):**
-- VO2Max atual com classificação e contexto (próximo ao limite superior/inferior da faixa?)
-- Se houver tendência recente de melhora ou estagnação, comentar
+- VO2Max de corrida e ciclismo com classificação Cooper e Idade Fitness oficial da Garmin ({fitness_age} anos vs {age} anos cronológicos).
+- Previsões de prova oficiais da Garmin (5k, 10k, 21k, 42k) e Limiar de Lactato se disponível.
 
 ---
 
@@ -273,13 +267,13 @@ Com base na análise integrada e no **Calendário do Atleta (RUNNA/Garmin)**, pr
 🔋 Briefing Diário — {formatted_date}
 
 **Recuperação:** [🟢/🟡/🔴]
-[2–3 frases: sono (duração/segmento) + HRV (ms) + FC repouso (bpm) + respiração (bpm)/SpO2 com interpretação fisiológica]
+[2–3 frases: sono (duração/Sleep Score) + HRV noturna (média/pico ms) + Body Battery (atual/recarga) + FC repouso (bpm hoje vs média 7d) com interpretação fisiológica]
 
 **Carga:** [🟢/🟡/🔴]
-[2–3 frases: ACWR + tendência semanal + risco ou oportunidade]
+[2–3 frases: Status Garmin + ACWR + carga aguda/crônica + tendência semanal + equilíbrio de carga]
 
 **Performance:** [🟢/🟡/🔴]
-[2 frases: VO2Max com classificação + tendência]
+[2 frases: VO2Max com classificação Cooper + Idade Fitness Garmin + previsões de prova]
 
 **Análise Integrada:** 🔍
 [2–3 frases cruzando as três dimensões e explicando a lógica da recomendação]
@@ -295,55 +289,57 @@ def generate_local_fallback(data):
     summary = metrics.get("dailySummary", {})
     sleep = metrics.get("sleep", {})
     hrv = metrics.get("hrv", {})
+    body_battery = metrics.get("bodyBattery", {})
     readiness = metrics.get("trainingReadiness", {})
     status = metrics.get("trainingStatus", {})
-    zepp = metrics.get("zepp", {})
-    z_cardio = zepp.get("cardiovascular", {})
-    z_sleep = zepp.get("sleep", {})
+    fitness_age_obj = metrics.get("fitnessAge", {})
     
     # --- RECOVERY ---
     readiness_score = readiness.get("score")
-    sleep_score = sleep.get("sleepScore")
-    sleep_duration = sleep.get("durationSeconds")
+    sleep_score = sleep.get("sleepScore") or (sleep.get("sleepScores", {}).get("overall", {}).get("value") if isinstance(sleep.get("sleepScores"), dict) else None)
+    sleep_fmt = sleep.get("durationFormatted", "n/a")
     
-    # Extract metrics with Zepp Cloud API fallback
-    hrv_val = hrv.get("lastNightAvg") or z_cardio.get("heartRateVariability")
-    resp_rate = summary.get("respiratoryRate") or z_cardio.get("respiratoryRate")
-    spo2_val = summary.get("oxygenSaturation") or z_cardio.get("oxygenSaturation")
-    resting_hr = summary.get("restingHeartRate") or z_cardio.get("restingHeartRate")
+    hrv_val = hrv.get("lastNightAvg")
+    hrv_peak = hrv.get("lastNight5MinHigh")
+    resting_hr = summary.get("restingHeartRate")
     resting_hr_7d = summary.get("restingHeartRate7dAvg")
     
-    sleep_fmt = sleep.get("durationFormatted") or z_sleep.get("durationFormatted") or "n/a"
-    sleep_segment_fmt = (
-        f"{z_sleep.get('sleepStart', '')[11:16]}–{z_sleep.get('sleepEnd', '')[11:16]}"
-        if z_sleep.get("sleepStart") and z_sleep.get("sleepEnd")
-        else None
-    )
+    resp_obj = summary.get("respiration", {})
+    resp_rate = resp_obj.get("waking") or summary.get("respiratoryRate")
+    
+    spo2_obj = summary.get("spO2", {})
+    spo2_val = spo2_obj.get("average") or summary.get("oxygenSaturation")
+    
+    bb_current = body_battery.get("current")
+    bb_charged = body_battery.get("charged") or body_battery.get("duringSleep")
     
     rec_val = "🟡"
     details_parts = []
     
     if sleep_fmt and sleep_fmt != "n/a":
-        score_str = f" (Nota do Sono: {sleep_score}/100)" if sleep_score else ""
-        details_parts.append(f"Sono: {sleep_fmt}{score_str}" + (f" [segmento: {sleep_segment_fmt}]" if sleep_segment_fmt else ""))
+        score_str = f" (Sleep Score: {sleep_score}/100)" if sleep_score else ""
+        details_parts.append(f"Sono: {sleep_fmt}{score_str}")
     if hrv_val:
-        details_parts.append(f"HRV: {hrv_val} ms")
+        peak_str = f" [pico: {hrv_peak} ms]" if hrv_peak else ""
+        details_parts.append(f"VFC Noturna: {hrv_val} ms{peak_str}")
+    if bb_current is not None:
+        chg_str = f" (+{bb_charged} no sono)" if bb_charged else ""
+        details_parts.append(f"Body Battery: {bb_current}{chg_str}")
     if resting_hr:
         rhr_str = f"FC Repouso: {resting_hr} bpm"
         if resting_hr_7d:
             rhr_str += f" (média 7d: {resting_hr_7d} bpm)"
         details_parts.append(rhr_str)
     if resp_rate:
-        details_parts.append(f"Frequência Respiratória: {resp_rate} bpm")
+        details_parts.append(f"Resp: {resp_rate} rpm")
     if spo2_val:
         details_parts.append(f"SpO2: {spo2_val}%")
         
-    # Evaluate recovery state based on sleep, HRV and resting HR
     hr_delta = (resting_hr - resting_hr_7d) if (resting_hr and resting_hr_7d) else None
     
     if (readiness_score and readiness_score >= 75) or (hrv_val and float(hrv_val) >= 50 and (hr_delta is None or hr_delta <= 2)):
         rec_val = "🟢"
-    elif (readiness_score and readiness_score < 50) or (hr_delta is not None and hr_delta > 4):
+    elif (readiness_score and readiness_score < 50) or (hr_delta is not None and hr_delta > 4) or (bb_current is not None and bb_current < 35):
         rec_val = "🔴"
     else:
         rec_val = "🟡"
@@ -358,40 +354,36 @@ def generate_local_fallback(data):
         rec_desc += f" | FC repouso levemente elevada ({resting_hr} vs {resting_hr_7d})."
     
     # --- LOAD ---
-    acwr = status.get("acwr_combined") or status.get("acwr") or status.get("acwr_estimated")
+    acwr = status.get("acwr_combined") or status.get("acwr")
+    acute_load = status.get("acuteEWMA_combined") or status.get("acuteLoad")
+    chronic_load = status.get("chronicEWMA_combined") or status.get("chronicLoad")
     weekly_load = status.get("weeklyLoadTrimp_combined") or status.get("weeklyTrainingLoad")
-    load_tunnel_min = status.get("loadTunnelMin")
-    load_tunnel_max = status.get("loadTunnelMax")
-    training_label = status.get("trainingStatus")
+    training_label = status.get("trainingStatus", "MANUTENÇÃO")
     
     load_val = "🟡"
-    load_desc = "Carga indeterminada."
+    load_desc = f"Status Garmin: {training_label}."
     
     if acwr is not None:
         if 0.8 <= acwr <= 1.3:
             load_val = "🟢"
-            load_desc = f"Carga balanceada. ACWR: {acwr:.2f}."
+            load_desc = f"Status Garmin: {training_label}. ACWR: {acwr:.2f} (Zona Ideal 0.8-1.3)."
         elif 1.3 < acwr <= 1.5 or 0.5 <= acwr < 0.8:
             load_val = "🟡"
-            load_desc = f"Atenção na carga. ACWR: {acwr:.2f} (fora da zona ideal 0.8-1.3)."
+            load_desc = f"Status Garmin: {training_label}. ACWR: {acwr:.2f} (Atenção - fora da zona ideal)."
         else:
             load_val = "🔴"
-            load_desc = f"Carga em zona de risco! ACWR: {acwr:.2f}."
-    elif weekly_load and load_tunnel_min and load_tunnel_max:
-        if load_tunnel_min <= weekly_load <= load_tunnel_max:
-            load_val = "🟢"
-            load_desc = f"Carga semanal dentro do túnel ideal ({weekly_load} / {load_tunnel_min}-{load_tunnel_max})."
-        elif weekly_load < load_tunnel_min:
-            load_val = "🟡"
-            load_desc = f"Carga semanal abaixo do ideal ({weekly_load} < {load_tunnel_min})."
-        else:
-            load_val = "🔴"
-            load_desc = f"Carga semanal acima do túnel ({weekly_load} > {load_tunnel_max})."
+            load_desc = f"Status Garmin: {training_label}. ACWR: {acwr:.2f} (Zona de Risco!)."
+    
+    if acute_load and chronic_load:
+        load_desc += f" Carga Aguda: {acute_load} | Crônica: {chronic_load}."
     
     # --- PERFORMANCE ---
     metadata = data.get("metadata", {})
     raw_date = metadata.get("date", "")
     vo2max = status.get("estimated_vo2max_combined") or status.get("vo2Max")
+    vo2_cyc = status.get("vo2MaxCycling") or status.get("estimated_cycling_vo2max")
+    fit_age = fitness_age_obj.get("fitnessAge") if isinstance(fitness_age_obj, dict) else (status.get("fitnessAge") or status.get("estimated_fitness_age_combined"))
+    
     perf_val = "🟡"
     perf_desc = f"VO2Max: {vo2max or 'n/a'}."
     
@@ -410,7 +402,9 @@ def generate_local_fallback(data):
             
         label, semaphor = classify_vo2max(float(vo2max), sex, age)
         perf_val = semaphor
-        perf_desc = f"Performance {label}. VO2Max: {vo2max}."
+        fit_age_str = f" | Idade Fitness Garmin: {fit_age} anos" if fit_age else ""
+        cyc_str = f" (Ciclismo: {vo2_cyc})" if vo2_cyc else ""
+        perf_desc = f"Performance {label}. VO2Max Corrida: {vo2max}{cyc_str}{fit_age_str}."
 
     # --- ACTION ---
     planned_workouts = metrics.get("plannedWorkouts")
@@ -453,7 +447,7 @@ def generate_local_fallback(data):
             
             if is_weekend_day or rec_val == "🟢":
                 action = "Ciclismo Indoor MyWhoosh (Sessão Endurance Z2 / Sweetspot)"
-                reason = "Sem treino RUNNA hoje. Aproveite a boa recuperação para treinar ciclismo no MyWhoosh (ex: MyWhoosh Zone 2 Endurance 45-60 min ou Sweetspot)."
+                reason = "Sem treino RUNNA hoje. Aproveite a boa recuperação para treinar ciclismo no MyWhoosh (ex: Sweet Spot 3x10min ou Zone 2 Endurance 60min)."
             else:
                 action = "Natação ou Ciclismo Indoor (MyWhoosh)"
                 reason = "Sem treino RUNNA hoje. Mantenha o condicionamento aeróbico com natação ou treino de ciclismo no MyWhoosh."

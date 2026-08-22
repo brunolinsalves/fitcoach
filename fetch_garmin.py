@@ -122,7 +122,7 @@ def extract_sleep_data(api, target_date):
 
     daily_sleep = sleep_raw.get("dailySleepDTO", {}) if success and sleep_raw else {}
 
-    # Check if today's data is empty (all nulls) — fall back to yesterday
+    # Check if today's data is empty — fall back to yesterday
     if not daily_sleep.get("sleepTimeSeconds"):
         yesterday = (date.fromisoformat(target_date) - timedelta(days=1)).isoformat()
         print(f"  Sleep data empty for {target_date}, trying {yesterday}...")
@@ -131,18 +131,23 @@ def extract_sleep_data(api, target_date):
             daily_sleep2 = sleep_raw2.get("dailySleepDTO", {})
             if daily_sleep2.get("sleepTimeSeconds"):
                 daily_sleep = daily_sleep2
+                sleep_raw = sleep_raw2
                 target_date = yesterday
 
     if not daily_sleep or not daily_sleep.get("sleepTimeSeconds"):
         return {"status": "Sem dados de sono disponíveis (relógio não registrou ou ainda não sincronizou)"}
 
-    # Calculate sleep score: Garmin may not provide it on older watches.
-    # We'll extract it from the top-level response if available.
+    # Extract sleep score
     sleep_score = None
     if success and sleep_raw:
         sleep_score = sleep_raw.get("sleepScore") or sleep_raw.get("overallScore")
     if not sleep_score and daily_sleep:
         sleep_score = daily_sleep.get("sleepScore")
+
+    # Sleep quality / scores
+    sleep_scores_dto = daily_sleep.get("sleepScores") or (sleep_raw.get("sleepScores") if sleep_raw else None)
+    if not sleep_score and sleep_scores_dto and isinstance(sleep_scores_dto, dict):
+        sleep_score = sleep_scores_dto.get("overall", {}).get("value")
 
     return {
         "date": daily_sleep.get("calendarDate", target_date),
@@ -157,12 +162,18 @@ def extract_sleep_data(api, target_date):
         "remSleepFormatted": format_seconds_to_time(daily_sleep.get("remSleepSeconds")),
         "awakeSeconds": daily_sleep.get("awakeSleepSeconds"),
         "awakeFormatted": format_seconds_to_time(daily_sleep.get("awakeSleepSeconds")),
+        "sleepStartLocal": daily_sleep.get("sleepStartTimestampLocal"),
+        "sleepEndLocal": daily_sleep.get("sleepEndTimestampLocal"),
+        "restingHeartRate": daily_sleep.get("restingHeartRate"),
+        "avgOvernightHrv": daily_sleep.get("avgOvernightHrv"),
+        "bodyBatteryChange": daily_sleep.get("bodyBatteryChange"),
+        "sleepScores": sleep_scores_dto,
     }
 
 def extract_hrv_data(api, target_date):
     """
     Extract Heart Rate Variability (HRV) metrics.
-    Note: Older devices like Forerunner 935 do NOT support HRV via this endpoint.
+    Forerunner 265 provides overnight average, 5-min peak, baseline range, and status.
     """
     success, hrv_raw, err = safe_api_call(api.get_hrv_data, target_date)
 
@@ -174,40 +185,49 @@ def extract_hrv_data(api, target_date):
     if not success:
         return {"status": f"Erro ao buscar HRV: {err}"}
     if not hrv_raw or hrv_raw == {}:
-        return {"status": "HRV não disponível (dispositivo pode não suportar este recurso)"}
+        return {"status": "HRV não disponível"}
 
     summary = hrv_raw.get("hrvSummary", {})
     if not summary:
         return {"status": "HRV retornou dados mas sem resumo (hrvSummary)"}
 
-    return {
-        "status": summary.get("status"),  # e.g., BALANCED, UNBALANCED
-        "lastNightAvg": summary.get("lastNightAvg"),  # ms
-        "weeklyAvg": summary.get("weeklyAvg"),  # ms
-        "baseline": {
+    baseline_obj = summary.get("baseline")
+    if not baseline_obj and (summary.get("baselineBalancedLow") is not None or summary.get("baselineBalancedUpper") is not None):
+        baseline_obj = {
             "low": summary.get("baselineBalancedLow"),
             "upper": summary.get("baselineBalancedUpper")
         }
+
+    return {
+        "status": summary.get("status"),  # e.g., BALANCED, UNBALANCED, POOR, NONE
+        "lastNightAvg": summary.get("lastNightAvg"),  # ms
+        "lastNight5MinHigh": summary.get("lastNight5MinHigh"),  # ms
+        "weeklyAvg": summary.get("weeklyAvg"),  # ms
+        "baseline": baseline_obj,
+        "feedbackPhrase": summary.get("feedbackPhrase"),
     }
 
 def extract_training_readiness(api, target_date):
     """
-    Extract Training Readiness metrics.
-    Note: This feature requires newer devices (e.g. Fenix 7+, FR 265+).
-    Forerunner 935 does NOT support Training Readiness.
+    Extract Training Readiness & Recovery metrics for Forerunner 265.
     """
-    # Try morning readiness first (AFTER_WAKEUP_RESET)
-    success, readiness_data, err = safe_api_call(api.get_morning_training_readiness, target_date)
+    # Try general training readiness list first (contains most recent post-exercise or morning snapshot)
+    success_list, readiness_list, err_list = safe_api_call(api.get_training_readiness, target_date)
+    if success_list and readiness_list and isinstance(readiness_list, list) and len(readiness_list) > 0:
+        # Prefer the latest snapshot of the day
+        latest = readiness_list[0] if len(readiness_list) > 0 else None
+        for item in readiness_list:
+            if isinstance(item, dict) and item.get("score") is not None:
+                latest = item
+                break
+        return _parse_readiness(latest or readiness_list[0])
 
+    # Fallback to morning training readiness (AFTER_WAKEUP_RESET)
+    success, readiness_data, err = safe_api_call(api.get_morning_training_readiness, target_date)
     if success and readiness_data:
         return _parse_readiness(readiness_data)
 
-    # Fallback to general training readiness list
-    success_list, readiness_list, err_list = safe_api_call(api.get_training_readiness, target_date)
-    if success_list and readiness_list and isinstance(readiness_list, list) and len(readiness_list) > 0:
-        return _parse_readiness(readiness_list[-1])
-
-    return {"status": "Training Readiness não disponível (dispositivo pode não suportar este recurso)"}
+    return {"status": "Training Readiness não disponível"}
 
 def _parse_readiness(readiness_data):
     """Parse a single readiness snapshot dict."""
@@ -228,16 +248,89 @@ def _parse_readiness(readiness_data):
                 "level": comp.get("level")
             }
 
+    # Recovery time parsing (Garmin returns recovery time in minutes/seconds/hours depending on context)
+    rec_time_raw = readiness_data.get("recoveryTime")
+    rec_hours = None
+    if rec_time_raw is not None:
+        if rec_time_raw > 100:  # In minutes or seconds
+            rec_hours = round(rec_time_raw / 60.0 if rec_time_raw < 10000 else rec_time_raw / 3600.0, 1)
+        else:
+            rec_hours = rec_time_raw
+
     return {
         "score": readiness_data.get("score"),
         "level": readiness_data.get("level"),
+        "recoveryTimeHours": rec_hours,
+        "recoveryTimeChangePhrase": readiness_data.get("recoveryTimeChangePhrase"),
+        "sleepScore": readiness_data.get("sleepScore"),
+        "acuteLoad": readiness_data.get("acuteLoad"),
+        "hrvWeeklyAverage": readiness_data.get("hrvWeeklyAverage"),
+        "feedbackShort": readiness_data.get("feedbackShort"),
+        "feedbackLong": readiness_data.get("feedbackLong"),
+        "inputContext": readiness_data.get("inputContext"),
         "components": components if components else None
     }
 
+def extract_body_battery(api, target_date, summary_data=None):
+    """
+    Extract Body Battery data, recharge, drain, dynamic feedback, and events.
+    """
+    bb_res = {
+        "current": None,
+        "highest": None,
+        "lowest": None,
+        "charged": None,
+        "drained": None,
+        "duringSleep": None,
+        "atWakeTime": None,
+        "dynamicFeedback": None,
+        "events": []
+    }
+
+    if summary_data and isinstance(summary_data, dict):
+        bb_res["current"] = summary_data.get("bodyBatteryMostRecentValue")
+        bb_res["highest"] = summary_data.get("bodyBatteryHighestValue")
+        bb_res["lowest"] = summary_data.get("bodyBatteryLowestValue")
+        bb_res["charged"] = summary_data.get("bodyBatteryChargedValue")
+        bb_res["drained"] = summary_data.get("bodyBatteryDrainedValue")
+        bb_res["duringSleep"] = summary_data.get("bodyBatteryDuringSleep")
+        bb_res["atWakeTime"] = summary_data.get("bodyBatteryAtWakeTime")
+
+    # Fetch detailed Body Battery event log
+    success, bb_raw, err = safe_api_call(api.get_body_battery, target_date)
+    if success and bb_raw:
+        item = bb_raw[-1] if isinstance(bb_raw, list) and bb_raw else (bb_raw if isinstance(bb_raw, dict) else {})
+        if item:
+            if bb_res["charged"] is None:
+                bb_res["charged"] = item.get("charged")
+            if bb_res["drained"] is None:
+                bb_res["drained"] = item.get("drained")
+
+            dyn = item.get("bodyBatteryDynamicFeedbackEvent")
+            if dyn and isinstance(dyn, dict):
+                bb_res["dynamicFeedback"] = {
+                    "level": dyn.get("bodyBatteryLevel"),
+                    "feedbackShort": dyn.get("feedbackShortType"),
+                    "feedbackLong": dyn.get("feedbackLongType")
+                }
+
+            events = item.get("bodyBatteryActivityEvent") or []
+            parsed_events = []
+            for ev in events:
+                if isinstance(ev, dict):
+                    parsed_events.append({
+                        "type": ev.get("eventType"),
+                        "impact": ev.get("bodyBatteryImpact"),
+                        "feedback": ev.get("shortFeedback"),
+                        "durationMin": round((ev.get("durationInMilliseconds") or 0) / 60000.0, 0)
+                    })
+            bb_res["events"] = parsed_events
+
+    return bb_res
+
 def extract_training_status(api, target_date):
     """
-    Extract training status, weekly load, VO2Max, and fitness trend.
-    The response structure is heavily nested with device-keyed data.
+    Extract training status, acute load, chronic load, load balance, VO2Max, and fitness trend.
     """
     success, status_raw, err = safe_api_call(api.get_training_status, target_date)
     if not success or not status_raw:
@@ -250,27 +343,24 @@ def extract_training_status(api, target_date):
     if vo2max_obj and isinstance(vo2max_obj, dict):
         generic = vo2max_obj.get("generic") or {}
         if generic and isinstance(generic, dict):
-            result["vo2Max"] = generic.get("vo2MaxPreciseValue")
+            result["vo2Max"] = generic.get("vo2MaxPreciseValue") or generic.get("vo2MaxValue")
             result["vo2MaxDate"] = generic.get("calendarDate")
             result["fitnessAge"] = generic.get("fitnessAge")
 
         cycling = vo2max_obj.get("cycling") or {}
         if cycling and isinstance(cycling, dict):
-            result["vo2MaxCycling"] = cycling.get("vo2MaxPreciseValue")
+            result["vo2MaxCycling"] = cycling.get("vo2MaxPreciseValue") or cycling.get("vo2MaxValue")
 
     # --- Training Status (nested inside mostRecentTrainingStatus) ---
     most_recent = status_raw.get("mostRecentTrainingStatus") or {}
     latest_data = (most_recent.get("latestTrainingStatusData") or {}) if isinstance(most_recent, dict) else {}
-    
-    # latestTrainingStatusData is keyed by deviceId (e.g. "3982518093")
-    # We iterate to find any device's data
+
     device_status = None
     device_name = None
     if latest_data and isinstance(latest_data, dict):
         for device_id, data in latest_data.items():
             if isinstance(data, dict):
                 device_status = data
-                # Try to find device name
                 recorded_devices = (most_recent.get("recordedDevices") or []) if isinstance(most_recent, dict) else []
                 for dev in (recorded_devices or []):
                     if isinstance(dev, dict) and str(dev.get("deviceId")) == str(device_id):
@@ -278,22 +368,22 @@ def extract_training_status(api, target_date):
                 break
 
     if device_status:
-        # Map numeric training status codes to readable labels
         ts_code = device_status.get("trainingStatus")
         ts_labels = {
             0: "NOT_APPLICABLE",
             1: "DETRAINING",
-            2: "UNPRODUCTIVE",     # Validado no site da garmin connect
-            3: "MAINTAINING", 
-            4: "MAINTAINING",      # Validado no site da garmin connect
-            5: "RECOVERY",         # Validado no site da garmin connect
-            6: "PEAKING",          # Validado no site da garmin connect
-            7: "PRODUCTIVE",       # Validado no site da garmin connect
+            2: "UNPRODUCTIVE",
+            3: "MAINTAINING",
+            4: "MAINTAINING",
+            5: "RECOVERY",
+            6: "PEAKING",
+            7: "PRODUCTIVE",
             8: "OVERREACHING",
             9: "STRAINED",
         }
         result["trainingStatus"] = ts_labels.get(ts_code, f"UNKNOWN({ts_code})")
         result["trainingStatusCode"] = ts_code
+        result["trainingStatusFeedbackPhrase"] = device_status.get("trainingStatusFeedbackPhrase")
         result["weeklyTrainingLoad"] = device_status.get("weeklyTrainingLoad")
         result["loadTunnelMin"] = device_status.get("loadTunnelMin")
         result["loadTunnelMax"] = device_status.get("loadTunnelMax")
@@ -301,34 +391,228 @@ def extract_training_status(api, target_date):
         result["fitnessTrend"] = device_status.get("fitnessTrend")
         result["deviceName"] = device_name
 
-        # Calculate ACWR if acute load data is available
         acute_dto = device_status.get("acuteTrainingLoadDTO")
         if acute_dto and isinstance(acute_dto, dict):
-            result["acuteLoad"] = acute_dto.get("acuteTrainingLoad")
-            result["chronicLoad"] = acute_dto.get("chronicTrainingLoad")
-            if result.get("acuteLoad") and result.get("chronicLoad") and result["chronicLoad"] > 0:
+            result["acuteLoad"] = acute_dto.get("dailyTrainingLoadAcute") or acute_dto.get("acuteTrainingLoad")
+            result["chronicLoad"] = acute_dto.get("dailyTrainingLoadChronic") or acute_dto.get("chronicTrainingLoad")
+            result["acwr"] = acute_dto.get("dailyAcuteChronicWorkloadRatio")
+            result["acwrStatus"] = acute_dto.get("acwrStatus")
+            result["acwrStatusFeedback"] = acute_dto.get("acwrStatusFeedback")
+            if not result.get("acwr") and result.get("acuteLoad") and result.get("chronicLoad") and result["chronicLoad"] > 0:
                 result["acwr"] = round(result["acuteLoad"] / result["chronicLoad"], 2)
-        
-        # If no acute DTO, try to estimate ACWR from weekly load and tunnel
-        if "acwr" not in result and result.get("weeklyTrainingLoad") and result.get("loadTunnelMin") and result.get("loadTunnelMax"):
-            tunnel_mid = (result["loadTunnelMin"] + result["loadTunnelMax"]) / 2
-            if tunnel_mid > 0:
-                result["acwr_estimated"] = round(result["weeklyTrainingLoad"] / tunnel_mid, 2)
-                result["acwr_note"] = "Estimativa baseada em carga semanal / ponto médio do túnel de carga"
+
+    # --- Training Load Balance (Aerobic Low, Aerobic High, Anaerobic) ---
+    load_balance = status_raw.get("mostRecentTrainingLoadBalance") or {}
+    balance_map = (load_balance.get("metricsTrainingLoadBalanceDTOMap") or {}) if isinstance(load_balance, dict) else {}
+    if balance_map and isinstance(balance_map, dict):
+        for dev_id, b_data in balance_map.items():
+            if isinstance(b_data, dict):
+                result["loadBalance"] = {
+                    "aerobicLow": b_data.get("monthlyLoadAerobicLow"),
+                    "aerobicLowTargetMin": b_data.get("monthlyLoadAerobicLowTargetMin"),
+                    "aerobicLowTargetMax": b_data.get("monthlyLoadAerobicLowTargetMax"),
+                    "aerobicHigh": b_data.get("monthlyLoadAerobicHigh"),
+                    "aerobicHighTargetMin": b_data.get("monthlyLoadAerobicHighTargetMin"),
+                    "aerobicHighTargetMax": b_data.get("monthlyLoadAerobicHighTargetMax"),
+                    "anaerobic": b_data.get("monthlyLoadAnaerobic"),
+                    "anaerobicTargetMin": b_data.get("monthlyLoadAnaerobicTargetMin"),
+                    "anaerobicTargetMax": b_data.get("monthlyLoadAnaerobicTargetMax"),
+                    "feedbackPhrase": b_data.get("trainingBalanceFeedbackPhrase"),
+                }
+                break
 
     if not result:
         return {"status": "Training status retornou dados mas sem informações de treino"}
 
     return result
 
+def extract_lactate_threshold(api):
+    """
+    Extract Lactate Threshold metrics (LTHR & Threshold Pace/Speed).
+    """
+    success, lt_raw, err = safe_api_call(api.get_lactate_threshold)
+    if not success or not lt_raw or not isinstance(lt_raw, dict):
+        return None
+
+    speed_hr = lt_raw.get("speed_and_heart_rate", {})
+    if speed_hr and isinstance(speed_hr, dict):
+        hr = speed_hr.get("heartRate")
+        speed_mps = speed_hr.get("speed")
+        pace_sec = int(1000.0 / speed_mps) if speed_mps and speed_mps > 0 else None
+        return {
+            "heartRate": hr,
+            "speedMps": speed_mps,
+            "paceFormatted": format_seconds_to_time(pace_sec) if pace_sec else None,
+            "calendarDate": speed_hr.get("calendarDate"),
+        }
+    return None
+
+def extract_race_predictions(api):
+    """
+    Extract race prediction metrics directly from Garmin Connect.
+    """
+    success, pred_raw, err = safe_api_call(api.get_race_predictions)
+    if not success or not pred_raw or not isinstance(pred_raw, dict):
+        return {"status": "Race predictions não disponível"}
+
+    p5k = pred_raw.get("time5K")
+    p10k = pred_raw.get("time10K")
+    phalf = pred_raw.get("timeHalfMarathon")
+    pmara = pred_raw.get("timeMarathon")
+
+    if not any([p5k, p10k, phalf, pmara]):
+        return {"status": "Race predictions vazio"}
+
+    return {
+        "5k": {
+            "seconds": p5k,
+            "formatted": format_seconds_to_time(p5k),
+            "pace_formatted": format_seconds_to_time(p5k / 5.0) if p5k else "-"
+        },
+        "10k": {
+            "seconds": p10k,
+            "formatted": format_seconds_to_time(p10k),
+            "pace_formatted": format_seconds_to_time(p10k / 10.0) if p10k else "-"
+        },
+        "halfMarathon": {
+            "seconds": phalf,
+            "formatted": format_seconds_to_time(phalf),
+            "pace_formatted": format_seconds_to_time(phalf / 21.0975) if phalf else "-"
+        },
+        "marathon": {
+            "seconds": pmara,
+            "formatted": format_seconds_to_time(pmara),
+            "pace_formatted": format_seconds_to_time(pmara / 42.195) if pmara else "-"
+        }
+    }
+
+def extract_daily_summary(api, target_date):
+    """
+    Extract general summary metrics for steps, calories, stress, RHR, SpO2, respiration.
+    """
+    success, summary, err = safe_api_call(api.get_user_summary, target_date)
+    if not success or not summary:
+        return {"error": f"Erro ao buscar resumo diário: {err}"}
+
+    steps = summary.get("totalSteps") or 0
+    step_goal = summary.get("dailyStepGoal") or summary.get("stepGoal") or 0
+    active_cal = summary.get("activeKilocalories")
+    if active_cal is None:
+        total_cal = summary.get("totalKilocalories") or 0
+        bmr_cal = summary.get("bmrKilocalories") or 0
+        active_cal = max(0, int(total_cal - bmr_cal)) if total_cal and bmr_cal else 0
+
+    total_dist = summary.get("totalDistanceMeters") or 0.0
+    dist_km = round(total_dist / 1000.0, 2)
+
+    # Resting Heart Rate
+    resting_hr = summary.get("restingHeartRate")
+    last_7d_hr = summary.get("lastSevenDaysAvgRestingHeartRate")
+    if not resting_hr:
+        success_hr, hr_data, _ = safe_api_call(api.get_heart_rates, target_date)
+        if success_hr and hr_data:
+            resting_hr = hr_data.get("restingHeartRate")
+            last_7d_hr = last_7d_hr or hr_data.get("lastSevenDaysAvgRestingHeartRate")
+
+    # Stress
+    stress_avg = summary.get("averageStressLevel")
+    stress_max = summary.get("maxStressLevel")
+    stress_rest_dur = summary.get("restStressDuration")
+    stress_qualifier = summary.get("stressQualifier")
+
+    # Respiration
+    resp_waking = summary.get("avgWakingRespirationValue")
+    resp_lowest = summary.get("lowestRespirationValue")
+    resp_highest = summary.get("highestRespirationValue")
+
+    # SpO2
+    spo2_avg = summary.get("averageSpo2")
+    spo2_lowest = summary.get("lowestSpo2")
+    spo2_latest = summary.get("latestSpo2")
+
+    # Additional Respiration Endpoint check
+    success_resp, resp_raw, _ = safe_api_call(api.get_respiration_data, target_date)
+    resp_sleep = None
+    if success_resp and resp_raw and isinstance(resp_raw, dict):
+        resp_waking = resp_waking or resp_raw.get("avgWakingRespirationValue")
+        resp_sleep = resp_raw.get("avgSleepRespirationValue")
+        resp_lowest = resp_lowest or resp_raw.get("lowestRespirationValue")
+        resp_highest = resp_highest or resp_raw.get("highestRespirationValue")
+
+    # Additional SpO2 Endpoint check
+    if spo2_avg is None:
+        success_spo2, spo2_raw, _ = safe_api_call(api.get_spo2_data, target_date)
+        if success_spo2 and spo2_raw and isinstance(spo2_raw, dict):
+            spo2_avg = spo2_raw.get("averageSpO2")
+            spo2_lowest = spo2_raw.get("lowestSpO2")
+            spo2_latest = spo2_raw.get("latestSpO2")
+
+    return {
+        "steps": steps,
+        "stepGoal": step_goal,
+        "activeCalories": int(active_cal) if active_cal else 0,
+        "distanceKm": dist_km,
+        "restingHeartRate": resting_hr,
+        "restingHeartRate7dAvg": last_7d_hr,
+        "stress": {
+            "average": stress_avg,
+            "max": stress_max,
+            "restDurationSeconds": stress_rest_dur,
+            "qualifier": stress_qualifier
+        },
+        "respiration": {
+            "waking": resp_waking,
+            "sleep": resp_sleep,
+            "lowest": resp_lowest,
+            "highest": resp_highest
+        },
+        "spO2": {
+            "average": spo2_avg,
+            "lowest": spo2_lowest,
+            "latest": spo2_latest
+        },
+        "_rawSummary": summary
+    }
+
+def extract_fitness_age(api, target_date):
+    """
+    Extract official Garmin Fitness Age and components.
+    """
+    success, data, err = safe_api_call(api.get_fitnessage_data, target_date)
+    if not success or not data or not isinstance(data, dict):
+        return None
+
+    if data.get("fitnessAge"):
+        comps = data.get("components", {})
+        parsed_comps = {}
+        for k, v in comps.items():
+            if isinstance(v, dict):
+                parsed_comps[k] = v.get("value")
+
+        return {
+            "chronologicalAge": data.get("chronologicalAge"),
+            "fitnessAge": round(data.get("fitnessAge"), 1) if isinstance(data.get("fitnessAge"), (int, float)) else data.get("fitnessAge"),
+            "achievableFitnessAge": round(data.get("achievableFitnessAge"), 1) if isinstance(data.get("achievableFitnessAge"), (int, float)) else data.get("achievableFitnessAge"),
+            "components": parsed_comps if parsed_comps else None
+        }
+    return None
+
+def extract_endurance_score(api, target_date):
+    """Extract endurance score if available."""
+    success, data, err = safe_api_call(api.get_endurance_score, target_date)
+    if not success or not data or not isinstance(data, dict):
+        return None
+    score = data.get("overallScore") or data.get("enduranceScore")
+    if score:
+        return {"score": score, "raw": data}
+    return None
+
 def extract_weight_data(api, target_date):
     """
     Extract weight data using get_daily_weigh_ins and get_body_composition.
-    Falls back to get_weigh_ins with a wider range.
     """
     end_date = date.fromisoformat(target_date)
-    
-    # Try get_daily_weigh_ins first (more specific)
+
     success, weighins, err = safe_api_call(api.get_daily_weigh_ins, target_date)
     if success and weighins:
         entries = weighins.get("dateWeightList", []) if isinstance(weighins, dict) else []
@@ -344,7 +628,7 @@ def extract_weight_data(api, target_date):
                     "source": "daily_weigh_ins"
                 }
 
-    # Fallback: get_body_composition with wider range (30 days)
+    # Fallback: get_body_composition
     start_date = (end_date - timedelta(days=30)).isoformat()
     success2, comp_raw, err2 = safe_api_call(api.get_body_composition, start_date, target_date)
     if success2 and comp_raw:
@@ -361,144 +645,7 @@ def extract_weight_data(api, target_date):
                     "source": "body_composition"
                 }
 
-    # Fallback: get_weigh_ins with wider range
-    success3, weighins3, err3 = safe_api_call(api.get_weigh_ins, start_date, target_date)
-    if success3 and weighins3:
-        entries = weighins3 if isinstance(weighins3, list) else weighins3.get("dailyWeightSummaries", []) if isinstance(weighins3, dict) else []
-        if entries:
-            latest = entries[-1] if isinstance(entries, list) else entries
-            weight_val = latest.get("weight") or latest.get("averageWeight")
-            if weight_val:
-                return {
-                    "weightKg": round(weight_val / 1000.0, 2) if weight_val > 1000 else round(weight_val, 2),
-                    "date": latest.get("calendarDate"),
-                    "source": "weigh_ins"
-                }
-
-    return {"status": "Sem dados de peso encontrados (sem balança conectada ou sem registros recentes)"}
-
-def extract_race_predictions(api):
-    """
-    Extract race prediction metrics.
-    Note: Not all devices/accounts have race predictions available.
-    """
-    success, pred_raw, err = safe_api_call(api.get_race_predictions)
-    if not success:
-        return {"status": f"Erro ao buscar race predictions: {err}"}
-    if not pred_raw or pred_raw == {}:
-        return {"status": "Race predictions não disponível (dispositivo pode não suportar ou sem atividades recentes suficientes)"}
-
-    p5k = pred_raw.get("time5K")
-    p10k = pred_raw.get("time10K")
-    phalf = pred_raw.get("timeHalfMarathon")
-    pmara = pred_raw.get("timeMarathon")
-
-    if not any([p5k, p10k, phalf, pmara]):
-        return {"status": "Race predictions vazio (sem corridas recentes suficientes para gerar previsões)"}
-
-    return {
-        "5k": {"seconds": p5k, "formatted": format_seconds_to_time(p5k)},
-        "10k": {"seconds": p10k, "formatted": format_seconds_to_time(p10k)},
-        "halfMarathon": {"seconds": phalf, "formatted": format_seconds_to_time(phalf)},
-        "marathon": {"seconds": pmara, "formatted": format_seconds_to_time(pmara)}
-    }
-
-def extract_daily_summary(api, target_date):
-    """Extract general summary metrics for steps, calories, stress, body battery, etc."""
-    success, summary, err = safe_api_call(api.get_user_summary, target_date)
-    if not success or not summary:
-        return {"error": f"Erro ao buscar resumo diário: {err}"}
-
-    # Steps and calories
-    steps = summary.get("totalSteps")
-    steps = steps if steps is not None else 0
-
-    step_goal = summary.get("dailyStepGoal") or summary.get("stepGoal")
-    step_goal = step_goal if step_goal is not None else 0
-
-    active_cal = summary.get("activeKilocalories")
-
-    # If active calories is not direct, compute it: Total - BMR
-    if active_cal is None:
-        total_cal = summary.get("totalKilocalories")
-        total_cal = total_cal if total_cal is not None else 0
-        bmr_cal = summary.get("bmrKilocalories")
-        bmr_cal = bmr_cal if bmr_cal is not None else 0
-        active_cal = max(0, int(total_cal - bmr_cal)) if total_cal and bmr_cal else 0
-
-    total_dist = summary.get("totalDistanceMeters")
-    total_dist = total_dist if total_dist is not None else 0.0
-    dist_km = round(total_dist / 1000.0, 2)
-
-    # Body Battery (not available on all devices, e.g. FR 935)
-    bb_max = summary.get("bodyBatteryHighestValue")
-    bb_min = summary.get("bodyBatteryLowestValue")
-    bb_charged = summary.get("bodyBatteryChargedValue")
-    bb_drained = summary.get("bodyBatteryDrainedValue")
-    bb_current = summary.get("bodyBatteryMostRecentValue")
-
-    body_battery = None
-    if any(v is not None for v in [bb_current, bb_max, bb_min, bb_charged, bb_drained]):
-        body_battery = {
-            "current": bb_current,
-            "max": bb_max,
-            "min": bb_min,
-            "charged": bb_charged,
-            "drained": bb_drained
-        }
-
-    # Stress
-    stress_avg = summary.get("averageStressLevel")
-    stress_max = summary.get("maxStressLevel")
-
-    # Heart Rate
-    resting_hr = summary.get("restingHeartRate")
-    last_7d_hr = summary.get("lastSevenDaysAvgRestingHeartRate")
-    
-    if not resting_hr:
-        # Fallback to get_heart_rates
-        success_hr, hr_data, _ = safe_api_call(api.get_heart_rates, target_date)
-        if success_hr and hr_data:
-            resting_hr = hr_data.get("restingHeartRate")
-            last_7d_hr = last_7d_hr or hr_data.get("lastSevenDaysAvgRestingHeartRate")
-
-    return {
-        "steps": steps,
-        "stepGoal": step_goal,
-        "activeCalories": int(active_cal) if active_cal else 0,
-        "distanceKm": dist_km,
-        "restingHeartRate": resting_hr,
-        "restingHeartRate7dAvg": last_7d_hr,
-        "stress": {
-            "average": stress_avg,
-            "max": stress_max
-        },
-        "bodyBattery": body_battery,
-    }
-
-def extract_endurance_score(api, target_date):
-    """Extract endurance score if available."""
-    success, data, err = safe_api_call(api.get_endurance_score, target_date)
-    if not success or not data:
-        return None
-    # Only return if there's meaningful data
-    if isinstance(data, dict) and data:
-        score = data.get("overallScore") or data.get("enduranceScore")
-        if score:
-            return {"score": score, "raw": data}
-    return None
-
-def extract_fitness_age(api, target_date):
-    """Extract fitness age if available as standalone."""
-    success, data, err = safe_api_call(api.get_fitnessage_data, target_date)
-    if not success or not data:
-        return None
-    if isinstance(data, dict) and data.get("chronologicalAge"):
-        return {
-            "chronologicalAge": data.get("chronologicalAge"),
-            "fitnessAge": data.get("fitnessAge"),
-        }
-    return None
+    return {"status": "Sem dados de peso recentes"}
 
 def main():
     args = parse_arguments()
@@ -511,11 +658,18 @@ def main():
         print("Error: Could not initialize Garmin client.", file=sys.stderr)
         sys.exit(1)
 
+    print("Fetching daily activity summary...")
+    daily_summary = extract_daily_summary(api, target_date)
+    raw_summary = daily_summary.pop("_rawSummary", {})
+
     print("Fetching sleep data...")
     sleep_data = extract_sleep_data(api, target_date)
 
-    print("Fetching HRV data...")
+    print("Fetching HRV data (VFC)...")
     hrv_data = extract_hrv_data(api, target_date)
+
+    print("Fetching Body Battery...")
+    body_battery_data = extract_body_battery(api, target_date, summary_data=raw_summary)
 
     print("Fetching training readiness...")
     readiness_data = extract_training_readiness(api, target_date)
@@ -523,14 +677,14 @@ def main():
     print("Fetching training status & workload...")
     training_status = extract_training_status(api, target_date)
 
+    print("Fetching lactate threshold...")
+    lactate_threshold = extract_lactate_threshold(api)
+
     print("Fetching body composition (weight)...")
     weight_data = extract_weight_data(api, target_date)
 
     print("Fetching race predictions...")
     race_predictions = extract_race_predictions(api)
-
-    print("Fetching daily activity summary...")
-    daily_summary = extract_daily_summary(api, target_date)
 
     print("Fetching endurance score...")
     endurance_score = extract_endurance_score(api, target_date)
@@ -570,6 +724,7 @@ def main():
             "dailySummary": daily_summary,
             "sleep": sleep_data,
             "hrv": hrv_data,
+            "bodyBattery": body_battery_data,
             "trainingReadiness": readiness_data,
             "trainingStatus": training_status,
             "bodyComposition": weight_data,
@@ -578,7 +733,8 @@ def main():
         }
     }
 
-    # Add optional metrics only if they returned data
+    if lactate_threshold:
+        garmin_report["metrics"]["lactateThreshold"] = lactate_threshold
     if endurance_score:
         garmin_report["metrics"]["enduranceScore"] = endurance_score
     if fitness_age:
@@ -595,3 +751,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

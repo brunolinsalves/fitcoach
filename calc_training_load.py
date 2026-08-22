@@ -500,6 +500,10 @@ def load_garmin_activities(garmin_data_path: str, days: int = 42) -> list[dict]:
                     "max_heartrate": act.get("maxHR"),
                     "average_watts": act.get("averagePower") or act.get("avgPower") or act.get("averageWatts"),
                     "weighted_average_watts": act.get("weightedAveragePower") or act.get("weightedAvgPower") or act.get("weightedAverageWatts"),
+                    "garmin_vo2max": act.get("vO2MaxValue"),
+                    "aerobic_training_effect": act.get("aerobicTrainingEffect"),
+                    "anaerobic_training_effect": act.get("anaerobicTrainingEffect"),
+                    "activity_training_load": act.get("activityTrainingLoad"),
                     "source": "garmin",
                 })
             return simplified
@@ -517,8 +521,6 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Calculate combined training load and ACWR.")
     parser.add_argument("--garmin-data", type=str, default="garmin_data.json", help="Path to garmin_data.json")
     parser.add_argument("--strava-data", type=str, default="strava_activities.json", help="Path to strava_activities.json")
-    parser.add_argument("--health-connect-data", type=str, default="health_connect_data.json", help="Path to health_connect_data.json")
-    parser.add_argument("--zepp-data", type=str, default="zepp_data.json", help="Path to zepp_data.json")
     parser.add_argument("--date", type=str, default=date.today().isoformat(), help="Target date for ACWR (YYYY-MM-DD)")
     parser.add_argument("--days", type=int, default=42, help="Days of history for ACWR calculation")
     return parser.parse_args()
@@ -596,12 +598,16 @@ def main():
                 "avg_watts": act.get("weighted_average_watts") or act.get("average_watts"),
                 "trimp": act["trimp"],
                 "method": act["trimp_method"],
+                "garmin_vo2max": act.get("garmin_vo2max"),
                 "estimated_vo2max": act.get("estimated_vo2max"),
+                "aerobic_training_effect": act.get("aerobic_training_effect"),
+                "anaerobic_training_effect": act.get("anaerobic_training_effect"),
+                "activity_training_load": act.get("activity_training_load"),
                 "source": act.get("source", "?"),
             })
     recent_activities.sort(key=lambda x: x["date"], reverse=True)
 
-    # Calculate median VO2Max over the last 28 days
+    # Calculate median VO2Max over the last 28 days (prioritizing Garmin's official VO2Max per activity)
     vo2max_window_start = target - timedelta(days=28)
     cycling_vo2_values = []
     running_vo2_values = []
@@ -609,7 +615,7 @@ def main():
     for act in all_activities:
         t = parse_activity_time(act)
         if t and vo2max_window_start <= t.date() <= target:
-            vo2 = act.get("estimated_vo2max")
+            vo2 = act.get("garmin_vo2max") or act.get("estimated_vo2max")
             if vo2:
                 sport_type = act.get("sport_type") or act.get("type") or ""
                 if sport_type in ("Ride", "VirtualRide", "MountainBikeRide", "Cycling"):
@@ -637,16 +643,6 @@ def main():
     else:
         est_fitness_age_combined = None
 
-    # Load Zepp Data
-    zepp_data = None
-    if os.path.exists(args.zepp_data):
-        try:
-            with open(args.zepp_data, "r", encoding="utf-8") as f:
-                zepp_data = json.load(f)
-            print(f"  Loaded Zepp Cloud data from {args.zepp_data}")
-        except Exception as e:
-            print(f"  Warning: Could not read Zepp data: {e}", file=sys.stderr)
-
     # Enrich garmin_data.json
     if garmin_report:
         ts = garmin_report.get("metrics", {}).get("trainingStatus", {})
@@ -672,67 +668,17 @@ def main():
         }
         
         garmin_report["metrics"]["trainingStatus"] = ts
-
-        # Inject Zepp Cloud API metrics (exclusive source for Sleep & HRV)
-        if zepp_data:
-            garmin_report["metrics"]["zepp"] = zepp_data
-            z_cardio = zepp_data.get("cardiovascular", {})
-            z_sleep = zepp_data.get("sleep", {})
-
-            # Set primary HRV from Zepp Cloud API (Amazfit Helio Strap)
-            if z_cardio.get("heartRateVariability"):
-                garmin_report["metrics"]["hrv"] = {
-                    "status": "BALANCED",
-                    "lastNightAvg": z_cardio.get("heartRateVariability"),
-                    "weeklyAvg": z_cardio.get("heartRateVariability"),
-                    "source": "Zepp Cloud API (Amazfit Helio Strap)"
-                }
-
-            # Set primary Sleep from Zepp Cloud API (Amazfit Helio Strap)
-            if z_sleep.get("durationFormatted") and z_sleep.get("durationFormatted") != "n/a":
-                garmin_report["metrics"]["garminSleep"] = garmin_report["metrics"].get("sleep")
-                garmin_report["metrics"]["sleep"] = {
-                    "date": z_sleep.get("date", args.date),
-                    "sleepScore": z_sleep.get("sleepScore"),
-                    "durationFormatted": z_sleep.get("durationFormatted"),
-                    "durationMinutes": z_sleep.get("durationMinutes"),
-                    "durationSeconds": int(z_sleep.get("durationMinutes", 0) * 60) if z_sleep.get("durationMinutes") else None,
-                    "sleepStart": z_sleep.get("sleepStart"),
-                    "sleepEnd": z_sleep.get("sleepEnd"),
-                    "deepSleepMinutes": z_sleep.get("deepSleepMinutes"),
-                    "lightSleepMinutes": z_sleep.get("lightSleepMinutes"),
-                    "remSleepMinutes": z_sleep.get("remSleepMinutes"),
-                    "awakeMinutes": z_sleep.get("awakeMinutes"),
-                    "restingHeartRate": z_sleep.get("restingHeartRate"),
-                    "source": "Zepp Cloud API (Amazfit Helio Strap)"
-                }
-
-            # Enrich Daily Summary (resting HR, SpO2, Respiratory rate) from Zepp
-            daily_sum = garmin_report["metrics"].setdefault("dailySummary", {})
-            if z_cardio.get("restingHeartRate"):
-                daily_sum["restingHeartRateZepp"] = z_cardio.get("restingHeartRate")
-                daily_sum["restingHeartRate"] = z_cardio.get("restingHeartRate")
-            else:
-                daily_sum.pop("restingHeartRate", None)
-            
-            # Remove Garmin's 7d resting HR average to prevent confusion with Garmin RHR
-            daily_sum.pop("restingHeartRate7dAvg", None)
-
-            if z_cardio.get("oxygenSaturation"):
-                daily_sum["oxygenSaturation"] = z_cardio.get("oxygenSaturation")
-            if z_cardio.get("respiratoryRate"):
-                daily_sum["respiratoryRate"] = z_cardio.get("respiratoryRate")
         
-        # Inject Race Predictions if missing or previously calculated
+        # Fallback for race predictions only if Garmin did not provide them
         race_preds = garmin_report["metrics"].get("racePredictions", {})
-        if "5k" not in race_preds or not race_preds.get("5k", {}).get("seconds") or race_preds.get("calculated_from_vo2"):
+        if "5k" not in race_preds or not race_preds.get("5k", {}).get("seconds"):
             vo2_for_pred = est_combined_vo2max or ts.get("vo2Max")
             if vo2_for_pred:
                 garmin_report["metrics"]["racePredictions"] = calculate_race_predictions_from_vo2(vo2_for_pred, penalty=RUNNING_ECONOMY_PENALTY)
         
         with open(args.garmin_data, "w", encoding="utf-8") as f:
             json.dump(garmin_report, f, indent=2, ensure_ascii=False)
-        print(f"\n  Enriched {args.garmin_data} with combined training load and Health Connect data.")
+        print(f"\n  Enriched {args.garmin_data} with combined training load.")
     else:
         print(f"\n  Warning: {args.garmin_data} not found. Skipping enrichment.", file=sys.stderr)
 

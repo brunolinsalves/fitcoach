@@ -180,7 +180,7 @@ def main():
             fetch_cmd.extend(["--date", args.date])
         
         print()
-        if not run_step("[Layer 1a] Collecting data from Garmin Connect...", fetch_cmd, project_dir):
+        if not run_step("[Layer 1a] Collecting data from Garmin Connect (Forerunner 265)...", fetch_cmd, project_dir):
             print("Error: Garmin data collection failed. Cannot continue.", file=sys.stderr)
             sys.exit(1)
         print()
@@ -194,37 +194,24 @@ def main():
             print()
         elif not args.no_strava and not has_strava_config:
             print(">>> [Layer 1b] Strava skipped (STRAVA_CLIENT_ID/SECRET not configured in .env)\n")
-
-        # Step 3: Zepp Cloud API data collection (Sleep & Physiological metrics)
-        has_zepp_config = (os.getenv("ZEPP_EMAIL") and os.getenv("ZEPP_PASSWORD")) or (os.getenv("ZEPP_APP_TOKEN") and os.getenv("ZEPP_USER_ID"))
-        zepp_path = os.path.join(project_dir, "zepp_data.json")
-        if has_zepp_config:
-            zepp_cmd = [python_exe, str(project_dir / "fetch_zepp.py"), "--output", zepp_path]
-            run_step("[Layer 1c] Collecting health & sleep metrics from Zepp Cloud API...", zepp_cmd, project_dir)
-            print()
-        else:
-            print("Error: ZEPP_EMAIL and ZEPP_PASSWORD not configured in .env. Cannot fetch Zepp metrics.", file=sys.stderr)
-            sys.exit(1)
     else:
-        print(f"\n>>> [Layers 1a-1c] Skipping API calls. Using cached files.\n")
+        print(f"\n>>> [Layers 1a-1b] Skipping API calls. Using cached files.\n")
 
     # Check if garmin_data.json exists
     if not os.path.exists(output_path):
         print(f"Error: '{output_path}' does not exist. Run without --cached first.", file=sys.stderr)
         sys.exit(1)
 
-    # Calculate combined training load & merge Zepp + Strava metrics into garmin_data.json
-    zepp_path = os.path.join(project_dir, "zepp_data.json")
+    # Calculate combined training load & merge Strava metrics into garmin_data.json
     load_cmd = [
         python_exe, str(project_dir / "calc_training_load.py"),
         "--garmin-data", output_path,
         "--strava-data", strava_path,
-        "--zepp-data", zepp_path,
     ]
     if args.date:
         load_cmd.extend(["--date", args.date])
     
-    run_step("[Layer 1d] Calculating combined training load & merging metrics...", load_cmd, project_dir)
+    run_step("[Layer 1c] Calculating combined training load & merging metrics...", load_cmd, project_dir)
     print()
 
     # Step 4: Interpretation
