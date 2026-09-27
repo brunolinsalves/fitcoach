@@ -212,7 +212,7 @@ def compute_activity_trimp(activity: dict) -> tuple[float, str]:
 # VO2Max Estimation
 # ---------------------------------------------------------------------------
 
-def estimate_session_vo2max(activity: dict, max_hr: float, resting_hr: float, weight_kg: float) -> float | None:
+def estimate_session_vo2max(activity: dict, max_hr: float, resting_hr: float, weight_kg: float | None) -> float | None:
     """
     Estimate VO2Max for a single session using the ACSM metabolic equations.
     """
@@ -238,6 +238,8 @@ def estimate_session_vo2max(activity: dict, max_hr: float, resting_hr: float, we
     # 1. Cycling VO2Max
     avg_watts = activity.get("weighted_average_watts") or activity.get("average_watts")
     if avg_watts and avg_watts > 0 and sport_type in ("Ride", "VirtualRide", "MountainBikeRide", "Cycling"):
+        if not weight_kg or weight_kg <= 0:
+            return None
         max_power_estimate = avg_watts / hrr_fraction
         # ACSM cycling formula: VO2 = (10.8 * W / M) + 7
         vo2max = (10.8 * max_power_estimate / weight_kg) + 7
@@ -534,14 +536,19 @@ def main():
     
     # Load Garmin Data (to extract weight)
     garmin_report = {}
-    user_weight_kg = 75.0
+    user_weight_kg = None
     if os.path.exists(args.garmin_data):
         with open(args.garmin_data, "r") as f:
             garmin_report = json.load(f)
-        weight = garmin_report.get("metrics", {}).get("bodyComposition", {}).get("weightKg")
+        weight = (
+            garmin_report.get("metrics", {}).get("bodyComposition", {}).get("weightKg")
+            or garmin_report.get("metadata", {}).get("userProfileWeightKg")
+        )
         if weight:
             user_weight_kg = float(weight)
-        print(f"  Loaded weight for VO2Max calculation: {user_weight_kg} kg")
+            print(f"  Loaded weight for VO2Max calculation: {user_weight_kg} kg")
+        else:
+            print("  Warning: Nenhum peso registrado encontrado no Garmin.", file=sys.stderr)
     
     # Load Strava activities
     strava_acts = []

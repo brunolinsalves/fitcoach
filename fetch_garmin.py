@@ -607,15 +607,21 @@ def extract_endurance_score(api, target_date):
         return {"score": score, "raw": data}
     return None
 
-def extract_weight_data(api, target_date):
+def extract_weight_data(api, target_date, output_path="garmin_data.json"):
     """
-    Extract weight data using get_daily_weigh_ins and get_body_composition.
+    Extract latest recorded weight from Garmin without any hard-coded defaults.
+    Strategy:
+    1. Daily weigh-in on target_date.
+    2. Body composition history (expanded search up to 365 days) to find the latest weigh-in.
+    3. User profile settings in Garmin Connect (userData.weight registered in Garmin account).
+    4. Last known weight from existing local cache file if API is temporarily unavailable.
     """
     end_date = date.fromisoformat(target_date)
 
+    # 1. Daily weigh-ins on target_date
     success, weighins, err = safe_api_call(api.get_daily_weigh_ins, target_date)
-    if success and weighins:
-        entries = weighins.get("dateWeightList", []) if isinstance(weighins, dict) else []
+    if success and weighins and isinstance(weighins, dict):
+        entries = weighins.get("dateWeightList", [])
         if entries:
             latest = entries[-1]
             weight_g = latest.get("weight")
@@ -628,24 +634,60 @@ def extract_weight_data(api, target_date):
                     "source": "daily_weigh_ins"
                 }
 
-    # Fallback: get_body_composition
-    start_date = (end_date - timedelta(days=30)).isoformat()
-    success2, comp_raw, err2 = safe_api_call(api.get_body_composition, start_date, target_date)
-    if success2 and comp_raw:
+    # 2. Historical body composition: search up to 365 days back to find the most recent weigh-in
+    search_end = max(end_date, date.today())
+    start_date = (search_end - timedelta(days=365)).isoformat()
+    success2, comp_raw, err2 = safe_api_call(api.get_body_composition, start_date, search_end.isoformat())
+    if success2 and comp_raw and isinstance(comp_raw, dict):
         list_dto = comp_raw.get("dateWeightList", [])
         if list_dto:
-            latest_entry = list_dto[-1]
-            weight_g = latest_entry.get("weight")
+            valid_entries = [e for e in list_dto if e.get("weight")]
+            if valid_entries:
+                latest_entry = max(valid_entries, key=lambda x: str(x.get("calendarDate") or ""))
+                weight_g = latest_entry.get("weight")
+                if weight_g:
+                    return {
+                        "weightKg": round(weight_g / 1000.0, 2) if weight_g > 1000 else round(weight_g, 2),
+                        "bmi": latest_entry.get("bmi"),
+                        "bodyFatPercent": latest_entry.get("bodyFat"),
+                        "date": latest_entry.get("calendarDate"),
+                        "source": "body_composition"
+                    }
+
+    # 3. User profile settings in Garmin Connect (weight stored in Garmin account profile)
+    success3, settings_raw, err3 = safe_api_call(api.connectapi, '/userprofile-service/userprofile/user-settings')
+    if success3 and settings_raw and isinstance(settings_raw, dict):
+        user_data = settings_raw.get('userData', {})
+        if isinstance(user_data, dict):
+            weight_g = user_data.get('weight')
             if weight_g:
+                weight_val = float(weight_g)
                 return {
-                    "weightKg": round(weight_g / 1000.0, 2) if weight_g > 1000 else round(weight_g, 2),
-                    "bmi": latest_entry.get("bmi"),
-                    "bodyFatPercent": latest_entry.get("bodyFat"),
-                    "date": latest_entry.get("calendarDate"),
-                    "source": "body_composition"
+                    "weightKg": round(weight_val / 1000.0, 2) if weight_val > 1000 else round(weight_val, 2),
+                    "bmi": None,
+                    "bodyFatPercent": None,
+                    "date": None,
+                    "source": "garmin_user_profile"
                 }
 
-    return {"status": "Sem dados de peso recentes"}
+    # 4. Fallback: check existing local cache file for the last known Garmin weight
+    if output_path and os.path.exists(output_path):
+        try:
+            with open(output_path, "r", encoding="utf-8") as f:
+                cached_data = json.load(f)
+            cached_weight = cached_data.get("metrics", {}).get("bodyComposition", {})
+            if cached_weight.get("weightKg"):
+                return {
+                    "weightKg": cached_weight.get("weightKg"),
+                    "bmi": cached_weight.get("bmi"),
+                    "bodyFatPercent": cached_weight.get("bodyFatPercent"),
+                    "date": cached_weight.get("date"),
+                    "source": "cached_garmin_fallback"
+                }
+        except Exception:
+            pass
+
+    return {"status": "Sem dados de peso registrados no Garmin"}
 
 def main():
     args = parse_arguments()
@@ -681,7 +723,7 @@ def main():
     lactate_threshold = extract_lactate_threshold(api)
 
     print("Fetching body composition (weight)...")
-    weight_data = extract_weight_data(api, target_date)
+    weight_data = extract_weight_data(api, target_date, output_path=output_path)
 
     print("Fetching race predictions...")
     race_predictions = extract_race_predictions(api)
@@ -692,15 +734,25 @@ def main():
     print("Fetching fitness age...")
     fitness_age = extract_fitness_age(api, target_date)
 
-    print("Fetching profile user settings (gender, birthdate)...")
+    print("Fetching profile user settings (gender, birthdate, profile weight)...")
     success_settings, settings_raw, err_settings = safe_api_call(api.connectapi, '/userprofile-service/userprofile/user-settings')
     gender = None
     birth_date = None
+    user_weight_profile_kg = None
     if success_settings and settings_raw and isinstance(settings_raw, dict):
         user_data = settings_raw.get('userData', {})
         if isinstance(user_data, dict):
             gender = user_data.get('gender')
             birth_date = user_data.get('birthDate')
+            w_g = user_data.get('weight')
+            if w_g:
+                w_val = float(w_g)
+                user_weight_profile_kg = round(w_val / 1000.0, 2) if w_val > 1000 else round(w_val, 2)
+
+    # Ensure bodyComposition has weightKg if user profile weight is available
+    if isinstance(weight_data, dict) and not weight_data.get("weightKg") and user_weight_profile_kg:
+        weight_data["weightKg"] = user_weight_profile_kg
+        weight_data["source"] = weight_data.get("source") or "garmin_user_profile"
 
     print("Fetching planned workouts (Runna & Garmin)...")
     planned_workouts = []
@@ -718,7 +770,8 @@ def main():
             "userDisplayName": api.display_name,
             "fetchedAt": date.today().isoformat(),
             "gender": gender,
-            "birthDate": birth_date
+            "birthDate": birth_date,
+            "userProfileWeightKg": user_weight_profile_kg
         },
         "metrics": {
             "dailySummary": daily_summary,
