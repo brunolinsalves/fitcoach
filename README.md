@@ -13,7 +13,7 @@ Com base nessas informações, o sistema calcula métricas avançadas de carga d
   - **TRIMP (Training Impulse)**: Medição da intensidade/volume do treino baseada em frequência cardíaca e potência (FTP/LTHR).
   - **ACWR (Acute:Chronic Workload Ratio)**: Razão entre a carga aguda (fadiga dos últimos 7 dias) e a carga crônica (aptidão dos últimos 28 dias) para prever o risco de lesões.
 - **Deduplicação Inteligente**: Mescla atividades do Garmin e Strava de forma inteligente, evitando duplicar registros de treinos sincronizados em ambas as plataformas.
-- **Interpretação por Inteligência Artificial**: Utiliza o modelo `gemini-2.5-flash` para analisar a saúde física, a tendência de carga e sugerir a melhor ação do dia (ex: treino intervalado, rodagem regenerativa ou descanso total).
+- **Interpretação por Inteligência Artificial**: Utiliza o modelo `gemini-3.8-flash` (com fallback resiliente para `gemini-3.5-flash` e `gemini-2.5-flash`) para analisar a saúde física, a tendência de carga e sugerir a melhor ação do dia (ex: treino intervalado, rodagem regenerativa ou descanso total).
 - **Dashboard Premium**: Interface moderna em HTML, medidores visuais de ACWR (zonas ideal, cautela e perigo), acompanhamento de VO2 Max, histórico de sono e filtros temporais.
 
 ---

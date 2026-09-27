@@ -498,7 +498,7 @@ def main():
         import time
         import random
         
-        models_to_try = ["gemini-3.5-flash", "gemini-2.5-flash"]
+        models_to_try = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-2.5-flash"]
         success = False
         
         try:
